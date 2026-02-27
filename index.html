@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ontology Refiner — Cabai-LLM</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ─── Reset & Variables ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #050e08;
+  --surface:  #0a1610;
+  --surface2: #101f16;
+  --border:   #1a3324;
+  --accent:   #4ade80;
+  --accent2:  #86efac;
+  --warn:     #facc15;
+  --danger:   #f87171;
+  --text:     #dcfce7;
+  --muted:    #4d7a5e;
+  --font-head: 'Syne', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius: 10px;
+  --glow: 0 0 24px rgba(74,222,128,.22);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ─── Layout ────────────────────────────────────────────────────────────── */
+header {
+  padding: 28px 40px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: linear-gradient(180deg, #071209 0%, var(--bg) 100%);
+}
+header .logo {
+  font-family: var(--font-head);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -0.5px;
+}
+header .subtitle {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+header .api-badge {
+  margin-left: auto;
+  font-size: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 12px;
+  color: var(--muted);
+}
+header .api-badge span { color: var(--accent2); }
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px 32px;
+}
+
+/* ─── Upload Zone ───────────────────────────────────────────────────────── */
+#upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 60px 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  background: var(--surface);
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+#upload-zone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 80%, rgba(74,222,128,.05) 0%, transparent 70%);
+}
+#upload-zone:hover, #upload-zone.dragover {
+  border-color: var(--accent);
+  background: #081410;
+  box-shadow: var(--glow);
+}
+#upload-zone .icon { font-size: 40px; margin-bottom: 12px; opacity: .7; }
+#upload-zone h2 { font-family: var(--font-head); font-size: 18px; margin-bottom: 6px; color: var(--text); }
+#upload-zone p { color: var(--muted); font-size: 12px; }
+#upload-zone input[type=file] { display: none; }
+
+/* ─── Warning Banner ────────────────────────────────────────────────────── */
+.notice {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  margin-bottom: 14px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.notice.warn  { background: rgba(255,184,48,.08);  border: 1px solid rgba(255,184,48,.3);  color: var(--warn); }
+.notice.info  { background: rgba(42,196,255,.07);  border: 1px solid rgba(42,196,255,.25); color: var(--accent2); }
+.notice.danger{ background: rgba(255,79,79,.08);   border: 1px solid rgba(255,79,79,.3);   color: var(--danger); }
+.notice.ok    { background: rgba(63,234,122,.07);  border: 1px solid rgba(63,234,122,.25); color: var(--accent); }
+.notice .icon { font-size: 16px; flex-shrink: 0; }
+
+/* ─── Tabs ──────────────────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+.tab-btn {
+  padding: 10px 20px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+  position: relative;
+  top: 1px;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-btn .badge {
+  display: inline-block;
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 10px;
+  margin-left: 6px;
+  color: var(--muted);
+}
+.tab-btn.active .badge { background: rgba(63,234,122,.15); color: var(--accent); }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ─── Tables ────────────────────────────────────────────────────────────── */
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.panel-header h3 { font-family: var(--font-head); font-size: 15px; }
+.search-input {
+  margin-left: auto;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  width: 220px;
+  outline: none;
+  transition: border-color .15s;
+}
+.search-input:focus { border-color: var(--accent2); }
+.search-input::placeholder { color: var(--muted); }
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.data-table th {
+  text-align: left;
+  padding: 10px 14px;
+  background: var(--surface2);
+  color: var(--muted);
+  font-weight: 500;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.data-table td {
+  padding: 9px 14px;
+  border-bottom: 1px solid rgba(39,45,61,.6);
+  vertical-align: top;
+  color: var(--text);
+}
+.data-table tr:hover td { background: rgba(255,255,255,.02); }
+
+.chip {
+  display: inline-block;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--accent2);
+  margin: 2px 2px 0 0;
+}
+.chip-green { border-color: rgba(63,234,122,.3); color: var(--accent); background: rgba(63,234,122,.05); }
+
+/* ─── Edit Forms ────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.card h4 { font-family: var(--font-head); font-size: 14px; margin-bottom: 14px; color: var(--accent2); }
+
+.form-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 140px;
+}
+.form-group label {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.form-group label .cs-warn {
+  color: var(--warn);
+  font-size: 9px;
+  margin-left: 4px;
+}
+
+input[type=text], select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  outline: none;
+  width: 100%;
+  transition: border-color .15s;
+}
+input[type=text]:focus, select:focus { border-color: var(--accent2); }
+select option { background: var(--surface2); }
+
+/* Live validation states */
+input.valid   { border-color: rgba(63,234,122,.5); }
+input.invalid { border-color: rgba(255,79,79,.5); }
+.field-hint { font-size: 10px; color: var(--muted); margin-top: 3px; }
+.field-hint.warn  { color: var(--warn); }
+.field-hint.ok    { color: var(--accent); }
+.field-hint.error { color: var(--danger); }
+
+/* ─── Buttons ───────────────────────────────────────────────────────────── */
+.btn {
+  padding: 8px 18px;
+  border: none;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: opacity .15s, box-shadow .15s;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn-primary  { background: var(--accent);  color: #0d0f12; }
+.btn-primary:hover:not(:disabled)  { box-shadow: 0 0 12px rgba(63,234,122,.4); }
+.btn-blue     { background: var(--accent2); color: #0d0f12; }
+.btn-blue:hover:not(:disabled)     { box-shadow: 0 0 12px rgba(42,196,255,.35); }
+.btn-danger   { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
+.btn-danger:hover:not(:disabled)   { background: rgba(255,79,79,.1); }
+.btn-ghost    { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+.btn-ghost:hover:not(:disabled)    { border-color: var(--text); color: var(--text); }
+
+/* ─── Queue / Operations ────────────────────────────────────────────────── */
+#op-queue { margin-top: 8px; }
+.op-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 6px;
+  font-size: 11px;
+}
+.op-item .op-type {
+  background: rgba(63,234,122,.1);
+  border: 1px solid rgba(63,234,122,.2);
+  color: var(--accent);
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.op-item .op-desc { flex: 1; color: var(--text); }
+.op-item .op-remove { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 14px; padding: 0 4px; }
+
+/* ─── Consistency Panel ─────────────────────────────────────────────────── */
+#consistency-result {
+  margin-top: 16px;
+}
+
+/* ─── Footer / Apply bar ────────────────────────────────────────────────── */
+.sticky-bar {
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(0deg, var(--bg) 60%, transparent);
+  padding: 20px 32px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-end;
+}
+.queue-count {
+  margin-right: auto;
+  font-size: 12px;
+  color: var(--muted);
+}
+.queue-count span { color: var(--accent); font-weight: 600; }
+
+/* ─── Spinner ───────────────────────────────────────────────────────────── */
+.spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Scrollable containers ─────────────────────────────────────────────── */
+.scroll-table { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+
+/* ─── Collapsible rows for individuals ─────────────────────────────────── */
+.expand-btn { background: none; border: none; color: var(--accent2); cursor: pointer; font-size: 11px; }
+.ind-props { padding: 8px 14px 12px 28px; background: rgba(10,22,16,.7); font-size: 11px; }
+.prop-line { display: flex; gap: 6px; margin-bottom: 3px; color: var(--muted); }
+.prop-line .pname { color: var(--accent2); }
+.prop-line .pval  { color: var(--text); }
+
+/* ─── Responsive ────────────────────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .container { padding: 16px; }
+  header { padding: 16px; flex-wrap: wrap; }
+  .form-row { flex-direction: column; }
+  .search-input { width: 100%; }
+}
+
+/* ─── Utility ───────────────────────────────────────────────────────────── */
+.hidden { display: none !important; }
+.text-muted { color: var(--muted); }
+.text-accent { color: var(--accent); }
+.text-warn { color: var(--warn); }
+.text-danger { color: var(--danger); }
+.mb8 { margin-bottom: 8px; }
+.mt8 { margin-top: 8px; }
+hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">🌶 Ontology Refiner</div>
+    <div class="subtitle">Cabai-LLM — Stage 4 Refinement</div>
+  </div>
+  <div class="api-badge">API: <span id="api-url-display" style="color:var(--accent)">railway (configured)</span></div>
+</header>
+
+<!-- ═══ Config + Upload ══════════════════════════════════════════════════════ -->
+<div class="container">
+
+  <!-- API URL is hardcoded — no config card needed -->
+
+  <!-- Global notices -->
+  <div class="notice warn">
+    <span class="icon">⚠️</span>
+    <div>
+      <strong>Case sensitivity:</strong> All class names, individual names, and property names are
+      <strong>case-insensitive</strong> when searching — the backend normalises lookups to lowercase.
+      However, the <em>new</em> name you assign will be stored exactly as you type it, including capitalisation.
+    </div>
+  </div>
+  <div class="notice info">
+    <span class="icon">ℹ️</span>
+    <div>
+      Your OWL file is processed <strong>in memory only</strong> — no data is stored on the server.
+      Changes are queued locally and applied in one batch when you click <em>Apply All Operations</em>.
+    </div>
+  </div>
+
+  <!-- Upload zone -->
+  <div id="upload-zone" onclick="document.getElementById('file-input').click()"
+       ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+    <input type="file" id="file-input" accept=".owl,.rdf,.xml" onchange="handleFileSelect(event)"/>
+    <div class="icon">🦉</div>
+    <h2>Drop your <code>.owl</code> file here</h2>
+    <p>or click to browse — accepts <code>.owl</code>, <code>.rdf</code>, <code>.xml</code></p>
+  </div>
+
+  <!-- Loading / error state -->
+  <div id="loading-bar" class="notice info hidden">
+    <span class="spinner"></span>&nbsp; Parsing ontology…
+  </div>
+  <div id="parse-error" class="notice danger hidden">
+    <span class="icon">🚨</span><span id="parse-error-msg"></span>
+  </div>
+
+  <!-- ═══ Main Workspace ═══════════════════════════════════════════════════ -->
+  <div id="workspace" class="hidden">
+
+    <div class="notice ok" style="margin-bottom:16px">
+      <span class="icon">✅</span>
+      <span id="parse-summary"></span>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('classes')">
+        Classes <span class="badge" id="badge-classes">0</span>
+      </button>
+      <button class="tab-btn" onclick="showTab('individuals')">
+        Individuals <span class="badge" id="badge-individuals">0</span>
+      </button>
+      <button class="tab-btn" onclick="showTab('properties')">
+        Properties <span class="badge" id="badge-props">0</span>
+      </button>
+      <button class="tab-btn" onclick="showTab('operations')">
+        Edit Queue <span class="badge" id="badge-ops">0</span>
+      </button>
+      <button class="tab-btn" onclick="showTab('consistency')">
+        Consistency
+      </button>
+    </div>
+
+    <!-- ── Classes Tab ──────────────────────────────────────────────────── -->
+    <div class="tab-panel active" id="tab-classes">
+      <div class="panel-header">
+        <h3>Classes</h3>
+        <input class="search-input" type="text" placeholder="🔍 Filter classes…" oninput="filterTable('classes-table', this.value)"/>
+      </div>
+
+      <div class="notice warn" style="margin-bottom:12px">
+        <span class="icon">⚠️</span>
+        <div><strong>Name lookup is case-insensitive</strong> — but the new name you type will be saved as-is.
+        Spaces in names are allowed by owlready2 but may cause issues; prefer underscores.</div>
+      </div>
+
+      <div class="scroll-table mb8">
+        <table class="data-table" id="classes-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Label</th>
+              <th>Comment / Description</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="classes-tbody"></tbody>
+        </table>
+      </div>
+
+      <hr class="divider"/>
+      <div class="card">
+        <h4>✏️ Edit Class</h4>
+        <div class="notice info" style="margin-bottom:12px; font-size:11px;">
+          <span class="icon">ℹ️</span>
+          Use the <strong>Name</strong> field to identify the class (case-insensitive search).
+          Leave "New Name" blank if you only want to update label/comment.
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Class Name <span class="cs-warn">⚠ search is case-insensitive</span></label>
+            <input type="text" id="cls-target" placeholder="e.g. Cabai" oninput="liveValidate('cls-target','class')"/>
+            <div class="field-hint" id="cls-target-hint"></div>
+          </div>
+          <div class="form-group">
+            <label>New Name (optional)</label>
+            <input type="text" id="cls-newname" placeholder="e.g. Pepper"/>
+          </div>
+          <div class="form-group">
+            <label>New Label (optional)</label>
+            <input type="text" id="cls-label" placeholder="Human-readable label"/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="flex:3">
+            <label>New Description / Comment (optional)</label>
+            <input type="text" id="cls-comment" placeholder="rdfs:comment value"/>
+          </div>
+          <button class="btn btn-primary" onclick="enqueueClassEdit()">+ Add to Queue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Individuals Tab ──────────────────────────────────────────────── -->
+    <div class="tab-panel" id="tab-individuals">
+      <div class="panel-header">
+        <h3>Individuals</h3>
+        <input class="search-input" type="text" placeholder="🔍 Filter individuals…" oninput="filterTable('ind-table', this.value)"/>
+      </div>
+
+      <div class="notice warn" style="margin-bottom:12px">
+        <span class="icon">⚠️</span>
+        <div>Individual names are matched <strong>case-insensitively</strong>.
+        The stored name will match exactly what you type in the "New Name" field.
+        Deleting an individual <strong>cannot be undone</strong> after you apply operations.</div>
+      </div>
+
+      <div class="scroll-table mb8">
+        <table class="data-table" id="ind-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Class(es)</th>
+              <th>Properties</th>
+            </tr>
+          </thead>
+          <tbody id="ind-tbody"></tbody>
+        </table>
+      </div>
+
+      <hr class="divider"/>
+
+      <!-- Rename individual -->
+      <div class="card mb8">
+        <h4>✏️ Rename Individual</h4>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Current Name <span class="cs-warn">⚠ case-insensitive</span></label>
+            <input type="text" id="ind-rename-target" placeholder="Current individual name" oninput="liveValidate('ind-rename-target','individual')"/>
+            <div class="field-hint" id="ind-rename-target-hint"></div>
+          </div>
+          <div class="form-group">
+            <label>New Name</label>
+            <input type="text" id="ind-rename-new" placeholder="New individual name"/>
+          </div>
+          <button class="btn btn-primary" onclick="enqueueRenameIndividual()">+ Queue</button>
+        </div>
+      </div>
+
+      <!-- Delete individual -->
+      <div class="card mb8">
+        <h4>🗑️ Delete Individual</h4>
+        <div class="notice danger" style="margin-bottom:10px; font-size:11px;">
+          <span class="icon">🚨</span>
+          Deletion is permanent once applied. All object property assertions referencing this individual will also be removed.
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Individual Name <span class="cs-warn">⚠ case-insensitive</span></label>
+            <input type="text" id="ind-delete-name" placeholder="Name to delete" oninput="liveValidate('ind-delete-name','individual')"/>
+            <div class="field-hint" id="ind-delete-name-hint"></div>
+          </div>
+          <button class="btn btn-danger" onclick="enqueueDeleteIndividual()">+ Queue Delete</button>
+        </div>
+      </div>
+
+      <!-- Add individual -->
+      <div class="card mb8">
+        <h4>➕ Add Individual</h4>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Class <span class="cs-warn">⚠ case-insensitive</span></label>
+            <input type="text" id="ind-add-class" placeholder="Parent class" oninput="liveValidate('ind-add-class','class')"/>
+            <div class="field-hint" id="ind-add-class-hint"></div>
+          </div>
+          <div class="form-group">
+            <label>New Individual Name</label>
+            <input type="text" id="ind-add-name" placeholder="e.g. Cabai_Baru_1"/>
+          </div>
+          <button class="btn btn-primary" onclick="enqueueAddIndividual()">+ Queue</button>
+        </div>
+      </div>
+
+      <!-- Manage assertions -->
+      <div class="card">
+        <h4>🔗 Object Property Assertions</h4>
+        <div class="notice info" style="margin-bottom:12px; font-size:11px;">
+          <span class="icon">ℹ️</span>
+          These apply to <em>object properties</em> (individual → individual links).
+          For data properties (string/number values), re-upload a manually edited OWL file.
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Subject <span class="cs-warn">⚠ case-insensitive</span></label>
+            <input type="text" id="assert-subj" placeholder="Subject individual" oninput="liveValidate('assert-subj','individual')"/>
+            <div class="field-hint" id="assert-subj-hint"></div>
+          </div>
+          <div class="form-group">
+            <label>Property <span class="cs-warn">⚠ case-insensitive</span></label>
+            <input type="text" id="assert-prop" placeholder="Property name" oninput="liveValidate('assert-prop','property')"/>
+            <div class="field-hint" id="assert-prop-hint"></div>
+          </div>
+          <div class="form-group">
+            <label>Object <span class="cs-warn">⚠ case-insensitive</span></label>
+            <input type="text" id="assert-obj" placeholder="Object individual" oninput="liveValidate('assert-obj','individual')"/>
+            <div class="field-hint" id="assert-obj-hint"></div>
+          </div>
+        </div>
+        <div class="form-row">
+          <button class="btn btn-primary" onclick="enqueueAssertion('add')">+ Queue Add Assertion</button>
+          <button class="btn btn-danger"  onclick="enqueueAssertion('delete')">+ Queue Delete Assertion</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Properties Tab ───────────────────────────────────────────────── -->
+    <div class="tab-panel" id="tab-properties">
+      <div class="panel-header">
+        <h3>Properties</h3>
+        <input class="search-input" type="text" placeholder="🔍 Filter properties…" oninput="filterTable('props-table', this.value)"/>
+      </div>
+
+      <div class="notice warn" style="margin-bottom:12px">
+        <span class="icon">⚠️</span>
+        <div>Property names are searched <strong>case-insensitively</strong>.
+        The stored name preserves your capitalisation exactly.</div>
+      </div>
+
+      <div class="scroll-table mb8">
+        <table class="data-table" id="props-table">
+          <thead><tr><th>Name</th><th>Type</th><th>Domain</th><th>Range</th></tr></thead>
+          <tbody id="props-tbody"></tbody>
+        </table>
+      </div>
+
+      <hr class="divider"/>
+      <div class="card">
+        <h4>✏️ Edit Property</h4>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Property Name <span class="cs-warn">⚠ case-insensitive</span></label>
+            <input type="text" id="prop-target" placeholder="Property name" oninput="liveValidate('prop-target','property')"/>
+            <div class="field-hint" id="prop-target-hint"></div>
+          </div>
+          <div class="form-group">
+            <label>New Name (optional)</label>
+            <input type="text" id="prop-newname" placeholder="Leave blank to skip"/>
+          </div>
+          <div class="form-group">
+            <label>New Domain Class (optional)</label>
+            <input type="text" id="prop-domain" placeholder="Class name" oninput="liveValidate('prop-domain','class',true)"/>
+            <div class="field-hint" id="prop-domain-hint"></div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>New Range Class (object props, optional)</label>
+            <input type="text" id="prop-range-class" placeholder="Class name" oninput="liveValidate('prop-range-class','class',true)"/>
+            <div class="field-hint" id="prop-range-class-hint"></div>
+          </div>
+          <div class="form-group">
+            <label>New Range Type (data props, optional)</label>
+            <select id="prop-range-type">
+              <option value="">-- skip --</option>
+              <option value="str">str (string)</option>
+              <option value="int">int (integer)</option>
+              <option value="float">float</option>
+              <option value="bool">bool (boolean)</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="enqueuePropertyEdit()">+ Add to Queue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Operations Queue Tab ─────────────────────────────────────────── -->
+    <div class="tab-panel" id="tab-operations">
+      <div class="panel-header">
+        <h3>Edit Queue</h3>
+        <button class="btn btn-ghost" onclick="clearQueue()" style="margin-left:auto">Clear All</button>
+      </div>
+      <div class="notice info" style="margin-bottom:14px">
+        <span class="icon">ℹ️</span>
+        Operations are applied <strong>in order</strong>. If an earlier operation renames an entity,
+        subsequent operations must use the <em>new</em> name.
+      </div>
+      <div id="op-queue-empty" class="text-muted" style="padding:20px;text-align:center">
+        No operations queued. Use the edit forms in other tabs to add operations.
+      </div>
+      <div id="op-queue"></div>
+    </div>
+
+    <!-- ── Consistency Tab ──────────────────────────────────────────────── -->
+    <div class="tab-panel" id="tab-consistency">
+      <div class="panel-header"><h3>Consistency Check</h3></div>
+      <div class="notice warn" style="margin-bottom:16px">
+        <span class="icon">⚠️</span>
+        <div>The HermiT reasoner requires <strong>Java</strong> installed on the Railway container.
+        If Java is not available, the check will return a "reasoner unavailable" message — this is not a consistency failure.
+        Apply your operations first, then run the check on the updated ontology.</div>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+        <button class="btn btn-blue" onclick="runConsistency()">▶ Run Consistency Check</button>
+        <span id="consistency-spinner" class="hidden"><span class="spinner"></span> Running reasoner…</span>
+      </div>
+      <div id="consistency-result"></div>
+    </div>
+
+    <!-- ── Sticky Apply Bar ─────────────────────────────────────────────── -->
+    <div class="sticky-bar">
+      <div class="queue-count">Operations queued: <span id="queue-count-display">0</span></div>
+      <button class="btn btn-blue" onclick="downloadCurrentOwl()" id="btn-download">⬇ Download Current OWL</button>
+      <button class="btn btn-primary" onclick="applyOperations()" id="btn-apply">⚡ Apply All Operations</button>
+    </div>
+
+  </div><!-- /workspace -->
+</div><!-- /container -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════════════════════════════════════
+// ⚙️ HARDCODED RAILWAY BACKEND URL — update this when you redeploy
+const API_URL   = 'https://YOUR-APP.railway.app';
+
+let owlB64    = '';       // current OWL as base64 (in-memory, no server storage)
+let ontology  = null;     // parsed JSON from /parse
+let opQueue   = [];       // pending operations
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Drag & Drop + File Select
+// ═══════════════════════════════════════════════════════════════════════════
+function handleDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('dragover'); }
+function handleDragLeave(e) { document.getElementById('upload-zone').classList.remove('dragover'); }
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) uploadFile(file);
+}
+function handleFileSelect(e) { if (e.target.files[0]) uploadFile(e.target.files[0]); }
+
+async function uploadFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['owl','rdf','xml'].includes(ext)) {
+    alert('Please upload an .owl, .rdf, or .xml file.');
+    return;
+  }
+  document.getElementById('loading-bar').classList.remove('hidden');
+  document.getElementById('parse-error').classList.add('hidden');
+  document.getElementById('workspace').classList.add('hidden');
+
+  const fd = new FormData();
+  fd.append('file', file);
+  try {
+    const res = await fetch(`${API_URL}/parse`, { method: 'POST', body: fd });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || res.statusText);
+    }
+    const data = await res.json();
+    owlB64   = data.owl_b64;
+    ontology = data;
+    opQueue  = [];
+    renderWorkspace(data, file.name);
+  } catch(e) {
+    document.getElementById('parse-error-msg').textContent = e.message;
+    document.getElementById('parse-error').classList.remove('hidden');
+  } finally {
+    document.getElementById('loading-bar').classList.add('hidden');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Render Workspace
+// ═══════════════════════════════════════════════════════════════════════════
+function renderWorkspace(data, filename) {
+  document.getElementById('parse-summary').innerHTML =
+    `<strong>${filename}</strong> loaded — ` +
+    `${data.classes.length} classes, ${data.individuals.length} individuals, ` +
+    `${data.object_properties.length + data.data_properties.length} properties.`;
+
+  document.getElementById('badge-classes').textContent     = data.classes.length;
+  document.getElementById('badge-individuals').textContent = data.individuals.length;
+  document.getElementById('badge-props').textContent       =
+    data.object_properties.length + data.data_properties.length;
+
+  renderClasses(data.classes);
+  renderIndividuals(data.individuals);
+  renderProperties(data.object_properties, data.data_properties);
+  renderQueue();
+  document.getElementById('workspace').classList.remove('hidden');
+  document.getElementById('consistency-result').innerHTML = '';
+}
+
+// ── Classes ────────────────────────────────────────────────────────────────
+function renderClasses(classes) {
+  const tbody = document.getElementById('classes-tbody');
+  tbody.innerHTML = classes.map(c => `
+    <tr>
+      <td><code class="text-accent">${esc(c.name)}</code></td>
+      <td>${c.label ? `<span class="chip chip-green">${esc(c.label)}</span>` : '<span class="text-muted">—</span>'}</td>
+      <td style="max-width:360px;word-break:break-word">${c.comment ? esc(c.comment) : '<span class="text-muted">—</span>'}</td>
+      <td><button class="btn btn-ghost" style="font-size:10px;padding:4px 10px"
+            onclick="prefillClassEdit('${esc(c.name)}')">Edit</button></td>
+    </tr>
+  `).join('');
+}
+
+function prefillClassEdit(name) {
+  document.getElementById('cls-target').value = name;
+  showTab('classes');
+  document.getElementById('cls-target').focus();
+  liveValidate('cls-target','class');
+}
+
+// ── Individuals ────────────────────────────────────────────────────────────
+function renderIndividuals(individuals) {
+  const tbody = document.getElementById('ind-tbody');
+  tbody.innerHTML = individuals.map((ind, i) => {
+    const types = ind.types.map(t => `<span class="chip">${esc(t)}</span>`).join(' ');
+    const hasProps = Object.keys(ind.object_properties).length + Object.keys(ind.data_properties).length > 0;
+    const propsHtml = hasProps ? buildPropsHtml(ind) : '';
+    return `
+      <tr id="ind-row-${i}">
+        <td>
+          <code class="text-accent">${esc(ind.name)}</code>
+          ${hasProps ? `<button class="expand-btn" onclick="toggleIndProps(${i})">▶ props</button>` : ''}
+        </td>
+        <td>${types || '<span class="text-muted">—</span>'}</td>
+        <td style="color:var(--muted);font-size:11px">
+          ${Object.keys(ind.object_properties).length} obj · ${Object.keys(ind.data_properties).length} data
+        </td>
+      </tr>
+      ${hasProps ? `<tr id="ind-props-${i}" class="hidden">
+        <td colspan="3"><div class="ind-props">${propsHtml}</div></td>
+      </tr>` : ''}
+    `;
+  }).join('');
+}
+
+function buildPropsHtml(ind) {
+  let html = '';
+  for (const [p, vals] of Object.entries(ind.object_properties)) {
+    html += `<div class="prop-line"><span class="pname">[obj] ${esc(p)}</span><span>→</span><span class="pval">${vals.map(esc).join(', ')}</span></div>`;
+  }
+  for (const [p, vals] of Object.entries(ind.data_properties)) {
+    html += `<div class="prop-line"><span class="pname">[data] ${esc(p)}</span><span>→</span><span class="pval">${vals.map(esc).join(', ')}</span></div>`;
+  }
+  return html;
+}
+
+function toggleIndProps(i) {
+  const row = document.getElementById(`ind-props-${i}`);
+  const btn = document.querySelector(`#ind-row-${i} .expand-btn`);
+  if (row.classList.toggle('hidden')) { btn.textContent = '▶ props'; }
+  else { btn.textContent = '▼ props'; }
+}
+
+// ── Properties ─────────────────────────────────────────────────────────────
+function renderProperties(obj_props, data_props) {
+  const tbody = document.getElementById('props-tbody');
+  const all = [
+    ...obj_props.map(p => ({...p, type: 'object'})),
+    ...data_props.map(p => ({...p, type: 'data'})),
+  ];
+  tbody.innerHTML = all.map(p => `
+    <tr>
+      <td><code class="text-accent">${esc(p.name)}</code></td>
+      <td><span class="chip ${p.type==='object'?'chip-green':''}">${p.type}</span></td>
+      <td>${p.domain.length ? p.domain.map(d=>`<span class="chip">${esc(d)}</span>`).join(' ') : '<span class="text-muted">—</span>'}</td>
+      <td>${p.range.length  ? p.range.map(r=>`<span class="chip">${esc(r)}</span>`).join(' ')  : '<span class="text-muted">—</span>'}</td>
+    </tr>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Live Validation
+// ═══════════════════════════════════════════════════════════════════════════
+function liveValidate(inputId, kind, optional=false) {
+  const input = document.getElementById(inputId);
+  const hint  = document.getElementById(`${inputId}-hint`);
+  const val   = input.value.trim();
+
+  if (!val) {
+    if (optional) { input.className=''; if(hint){hint.textContent='';hint.className='field-hint';} return; }
+    input.className='invalid';
+    if(hint){hint.textContent='Cannot be empty.'; hint.className='field-hint error';}
+    return;
+  }
+
+  if (!ontology) { input.className=''; return; }
+
+  const nl = val.toLowerCase();
+  let found = false;
+  if (kind === 'class')      found = ontology.classes.some(c => c.name.toLowerCase()===nl || (c.label||'').toLowerCase()===nl);
+  if (kind === 'individual') found = ontology.individuals.some(i => i.name.toLowerCase()===nl);
+  if (kind === 'property')   found = [...ontology.object_properties,...ontology.data_properties].some(p => p.name.toLowerCase()===nl);
+
+  if (found) {
+    input.className = 'valid';
+    if (hint) { hint.textContent = `✓ Found in ontology`; hint.className = 'field-hint ok'; }
+  } else {
+    input.className = optional ? '' : 'invalid';
+    if (hint) {
+      hint.textContent = optional ? `Not found (will be skipped)` : `⚠ Not found — check spelling`;
+      hint.className = `field-hint ${optional ? 'warn' : 'error'}`;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Enqueue Operations
+// ═══════════════════════════════════════════════════════════════════════════
+function enqueueClassEdit() {
+  const target  = v('cls-target');
+  const newname = v('cls-newname');
+  const label   = v('cls-label');
+  const comment = v('cls-comment');
+
+  if (!target) return alert('Class name is required.');
+  if (!newname && !label && !comment) return alert('Provide at least one change (new name, label, or comment).');
+
+  if (newname) enqueue({ op:'rename_class', target, new_name:newname },
+    `rename_class: "${target}" → "${newname}"`);
+  if (label)   enqueue({ op:'set_class_label', target: newname||target, value:label },
+    `set_class_label: "${newname||target}" → "${label}"`);
+  if (comment) enqueue({ op:'set_class_comment', target: newname||target, value:comment },
+    `set_class_comment: "${newname||target}"`);
+
+  ['cls-target','cls-newname','cls-label','cls-comment'].forEach(id => {
+    document.getElementById(id).value='';
+    document.getElementById(id).className='';
+  });
+  const h = document.getElementById('cls-target-hint');
+  if(h){h.textContent='';h.className='field-hint';}
+}
+
+function enqueueRenameIndividual() {
+  const target  = v('ind-rename-target');
+  const newname = v('ind-rename-new');
+  if (!target || !newname) return alert('Both current and new name are required.');
+  enqueue({ op:'rename_individual', target, new_name:newname },
+    `rename_individual: "${target}" → "${newname}"`);
+  ['ind-rename-target','ind-rename-new'].forEach(clear);
+}
+
+function enqueueDeleteIndividual() {
+  const name = v('ind-delete-name');
+  if (!name) return alert('Individual name is required.');
+  if (!confirm(`Queue deletion of individual "${name}"?\nThis cannot be undone after applying.`)) return;
+  enqueue({ op:'delete_individual', target:name }, `delete_individual: "${name}"`);
+  clear('ind-delete-name');
+}
+
+function enqueueAddIndividual() {
+  const cls  = v('ind-add-class');
+  const name = v('ind-add-name');
+  if (!cls || !name) return alert('Class and individual name are both required.');
+  enqueue({ op:'add_individual', class_name:cls, name }, `add_individual: "${name}" of type "${cls}"`);
+  ['ind-add-class','ind-add-name'].forEach(clear);
+}
+
+function enqueueAssertion(mode) {
+  const subj = v('assert-subj');
+  const prop = v('assert-prop');
+  const obj  = v('assert-obj');
+  if (!subj || !prop || !obj) return alert('Subject, property, and object are all required.');
+  const op = mode === 'add' ? 'add_assertion' : 'delete_assertion';
+  const label = `${op}: "${subj}" —[${prop}]→ "${obj}"`;
+  enqueue({ op, subject:subj, property:prop, object:obj }, label);
+  ['assert-subj','assert-prop','assert-obj'].forEach(clear);
+}
+
+function enqueuePropertyEdit() {
+  const target     = v('prop-target');
+  const newname    = v('prop-newname');
+  const domain     = v('prop-domain');
+  const rangeClass = v('prop-range-class');
+  const rangeType  = document.getElementById('prop-range-type').value;
+
+  if (!target) return alert('Property name is required.');
+  if (!newname && !domain && !rangeClass && !rangeType)
+    return alert('Provide at least one change.');
+
+  const effective = newname || target;
+  if (newname) enqueue({ op:'rename_property', target, new_name:newname },
+    `rename_property: "${target}" → "${newname}"`);
+  if (domain)     enqueue({ op:'set_prop_domain',      target:effective, class_name:domain },
+    `set_prop_domain: "${effective}" domain → "${domain}"`);
+  if (rangeClass) enqueue({ op:'set_prop_range_class', target:effective, class_name:rangeClass },
+    `set_prop_range_class: "${effective}" range → "${rangeClass}"`);
+  if (rangeType)  enqueue({ op:'set_prop_range_type',  target:effective, range_type:rangeType },
+    `set_prop_range_type: "${effective}" range → ${rangeType}`);
+
+  ['prop-target','prop-newname','prop-domain','prop-range-class'].forEach(clear);
+  document.getElementById('prop-range-type').value='';
+  ['prop-target-hint','prop-domain-hint','prop-range-class-hint'].forEach(id => {
+    const el=document.getElementById(id); if(el){el.textContent='';el.className='field-hint';}
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Queue Rendering
+// ═══════════════════════════════════════════════════════════════════════════
+function enqueue(op, desc) {
+  opQueue.push({ op, desc });
+  renderQueue();
+  showTab('operations');
+}
+
+function renderQueue() {
+  const container = document.getElementById('op-queue');
+  const empty     = document.getElementById('op-queue-empty');
+  document.getElementById('queue-count-display').textContent = opQueue.length;
+  document.getElementById('badge-ops').textContent = opQueue.length;
+
+  if (opQueue.length === 0) { container.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display = 'none';
+
+  container.innerHTML = opQueue.map((item, i) => `
+    <div class="op-item">
+      <span class="op-type">${esc(item.op.op)}</span>
+      <span class="op-desc">${esc(item.desc)}</span>
+      <button class="op-remove" onclick="removeOp(${i})" title="Remove">✕</button>
+    </div>
+  `).join('');
+}
+
+function removeOp(i) {
+  opQueue.splice(i, 1);
+  renderQueue();
+}
+
+function clearQueue() {
+  if (!confirm('Clear all queued operations?')) return;
+  opQueue = [];
+  renderQueue();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Apply Operations
+// ═══════════════════════════════════════════════════════════════════════════
+async function applyOperations() {
+  if (!owlB64)        return alert('Load an OWL file first.');
+  if (opQueue.length === 0) return alert('No operations queued.');
+
+  const btn = document.getElementById('btn-apply');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Applying…';
+
+  try {
+    const res = await fetch(`${API_URL}/mutate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ owl_b64: owlB64, operations: opQueue.map(i => i.op) }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.statusText);
+
+    owlB64 = data.owl_b64;
+
+    const errCount = (data.errors||[]).length;
+    let msg = `✅ Applied ${data.applied} operation(s).`;
+    if (errCount) {
+      msg += `\n\n⚠️ ${errCount} error(s):\n` +
+        data.errors.map(e => `  Op #${e.op_index+1} (${e.op}): ${e.error}`).join('\n');
+    }
+    alert(msg);
+
+    opQueue = [];
+    renderQueue();
+
+    // Re-parse to refresh tables
+    await refreshParse();
+
+  } catch(e) {
+    alert('Error applying operations: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '⚡ Apply All Operations';
+  }
+}
+
+async function refreshParse() {
+  try {
+    const res = await fetch(`${API_URL}/mutate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ owl_b64: owlB64, operations: [] }),
+    });
+    // No ops — just get back the b64 (same), but we need fresh parse
+    // Actually re-use /parse via blob trick
+    const blob = await (await fetch(`${API_URL}/download`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ owl_b64: owlB64 })
+    })).blob();
+    const file = new File([blob], 'refined.owl', { type: blob.type });
+    const fd = new FormData(); fd.append('file', file);
+    const r2 = await fetch(`${API_URL}/parse`, { method:'POST', body:fd });
+    if (r2.ok) {
+      const d2 = await r2.json();
+      owlB64   = d2.owl_b64;
+      ontology = d2;
+      renderWorkspace(d2, 'refined.owl');
+    }
+  } catch(_) {/* silent */}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Download
+// ═══════════════════════════════════════════════════════════════════════════
+async function downloadCurrentOwl() {
+  if (!owlB64)  return alert('Load an OWL file first.');
+
+  try {
+    const res = await fetch(`${API_URL}/download`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ owl_b64: owlB64 }),
+    });
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'ontology_refined.owl'; a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) {
+    alert('Download failed: ' + e.message);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Consistency Check
+// ═══════════════════════════════════════════════════════════════════════════
+async function runConsistency() {
+  if (!owlB64)  return alert('Load an OWL file first.');
+
+  document.getElementById('consistency-spinner').classList.remove('hidden');
+  document.getElementById('consistency-result').innerHTML = '';
+
+  try {
+    const res = await fetch(`${API_URL}/check-consistency`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ owl_b64: owlB64 }),
+    });
+    const data = await res.json();
+
+    let html = '';
+    if (data.consistent === true) {
+      html = `<div class="notice ok"><span class="icon">✅</span><div>${esc(data.message)}</div></div>`;
+    } else if (data.consistent === false) {
+      let detail = '';
+      if (data.details && data.details.unsatisfiable_classes?.length)
+        detail += `<div>Unsatisfiable classes: ${data.details.unsatisfiable_classes.map(esc).join(', ')}</div>`;
+      if (data.details && data.details.inconsistent_individuals?.length)
+        detail += `<div>Inconsistent individuals: ${data.details.inconsistent_individuals.map(esc).join(', ')}</div>`;
+      html = `<div class="notice danger"><span class="icon">🚨</span><div><strong>${esc(data.message)}</strong>${detail}</div></div>`;
+    } else {
+      html = `<div class="notice warn"><span class="icon">⚠️</span><div>${esc(data.message)}</div></div>`;
+    }
+    document.getElementById('consistency-result').innerHTML = html;
+  } catch(e) {
+    document.getElementById('consistency-result').innerHTML =
+      `<div class="notice danger"><span class="icon">🚨</span>${esc(e.message)}</div>`;
+  } finally {
+    document.getElementById('consistency-spinner').classList.add('hidden');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Tab switching
+// ═══════════════════════════════════════════════════════════════════════════
+function showTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`tab-${name}`).classList.add('active');
+  document.querySelector(`.tab-btn[onclick="showTab('${name}')"]`).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Table filtering
+// ═══════════════════════════════════════════════════════════════════════════
+function filterTable(tableId, query) {
+  const q = query.toLowerCase();
+  const rows = document.querySelectorAll(`#${tableId} tbody tr`);
+  rows.forEach(r => {
+    r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Utilities
+// ═══════════════════════════════════════════════════════════════════════════
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function v(id) { return document.getElementById(id).value.trim(); }
+function clear(id) { document.getElementById(id).value=''; document.getElementById(id).className=''; }
+</script>
+</body>
+</html>
