@@ -4,680 +4,545 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Ontology Refiner — Cabai-LLM</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
-/* ─── Reset & Variables ─────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:       #050e08;
-  --surface:  #0a1610;
-  --surface2: #101f16;
-  --border:   #1a3324;
-  --accent:   #4ade80;
-  --accent2:  #86efac;
-  --warn:     #facc15;
-  --danger:   #f87171;
-  --text:     #dcfce7;
-  --muted:    #4d7a5e;
-  --font-head: 'Syne', sans-serif;
+  --bg:        #071a0e;
+  --surface:   #0d2416;
+  --surface2:  #122c1c;
+  --border:    #1e4030;
+  --accent:    #4ade80;
+  --warn:      #fbbf24;
+  --danger:    #f87171;
+  --text:      #e2f5e9;
+  --text-soft: #a3c4af;
+  --muted:     #5a8a6a;
+  --radius:    12px;
+  --radius-sm: 8px;
+  --font:      'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
-  --radius: 10px;
-  --glow: 0 0 24px rgba(74,222,128,.22);
 }
 
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 13px;
+  font-family: var(--font);
+  font-size: 14px;
   line-height: 1.6;
   min-height: 100vh;
 }
 
-/* ─── Layout ────────────────────────────────────────────────────────────── */
+/* ── Header ─────────────────────────────────────────────────────── */
 header {
-  padding: 28px 40px 20px;
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 28px;
   border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  background: linear-gradient(180deg, #071209 0%, var(--bg) 100%);
-}
-header .logo {
-  font-family: var(--font-head);
-  font-size: 22px;
-  font-weight: 800;
-  color: var(--accent);
-  letter-spacing: -0.5px;
-}
-header .subtitle {
-  font-size: 11px;
-  color: var(--muted);
-  letter-spacing: 2px;
-  text-transform: uppercase;
-}
-header .api-badge {
-  margin-left: auto;
-  font-size: 10px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 4px 12px;
-  color: var(--muted);
-}
-header .api-badge span { color: var(--accent2); }
-
-.container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 24px 32px;
-}
-
-/* ─── Upload Zone ───────────────────────────────────────────────────────── */
-#upload-zone {
-  border: 2px dashed var(--border);
-  border-radius: var(--radius);
-  padding: 60px 40px;
-  text-align: center;
-  cursor: pointer;
-  transition: border-color .2s, background .2s;
   background: var(--surface);
-  margin-bottom: 24px;
-  position: relative;
-  overflow: hidden;
 }
-#upload-zone::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at 50% 80%, rgba(74,222,128,.05) 0%, transparent 70%);
+.logo { font-size: 18px; font-weight: 600; color: var(--accent); }
+.logo span { font-size: 13px; font-weight: 400; color: var(--muted); margin-left: 8px; }
+.status-pill {
+  margin-left: auto; display: flex; align-items: center; gap: 6px;
+  background: rgba(74,222,128,.08); border: 1px solid rgba(74,222,128,.2);
+  border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--accent);
+}
+.dot { width:6px; height:6px; border-radius:50%; background:var(--accent); }
+
+/* ── Page ───────────────────────────────────────────────────────── */
+.page { max-width: 1060px; margin: 0 auto; padding: 28px 24px 100px; }
+
+/* ── Upload ─────────────────────────────────────────────────────── */
+#upload-zone {
+  border: 2px dashed var(--border); border-radius: var(--radius);
+  padding: 44px 32px; text-align: center; cursor: pointer;
+  transition: all .2s; background: var(--surface); margin-bottom: 24px;
 }
 #upload-zone:hover, #upload-zone.dragover {
-  border-color: var(--accent);
-  background: #081410;
-  box-shadow: var(--glow);
+  border-color: var(--accent); background: rgba(74,222,128,.04);
 }
-#upload-zone .icon { font-size: 40px; margin-bottom: 12px; opacity: .7; }
-#upload-zone h2 { font-family: var(--font-head); font-size: 18px; margin-bottom: 6px; color: var(--text); }
-#upload-zone p { color: var(--muted); font-size: 12px; }
 #upload-zone input[type=file] { display: none; }
+#upload-zone .up-icon { font-size: 34px; margin-bottom: 10px; }
+#upload-zone h2 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+#upload-zone p  { color: var(--muted); font-size: 13px; }
 
-/* ─── Warning Banner ────────────────────────────────────────────────────── */
-.notice {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  padding: 12px 16px;
-  border-radius: var(--radius);
-  margin-bottom: 14px;
-  font-size: 12px;
-  line-height: 1.5;
+/* ── Alerts ─────────────────────────────────────────────────────── */
+.alert {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 11px 15px; border-radius: var(--radius-sm);
+  margin-bottom: 14px; font-size: 13px; line-height: 1.5;
 }
-.notice.warn  { background: rgba(255,184,48,.08);  border: 1px solid rgba(255,184,48,.3);  color: var(--warn); }
-.notice.info  { background: rgba(42,196,255,.07);  border: 1px solid rgba(42,196,255,.25); color: var(--accent2); }
-.notice.danger{ background: rgba(255,79,79,.08);   border: 1px solid rgba(255,79,79,.3);   color: var(--danger); }
-.notice.ok    { background: rgba(63,234,122,.07);  border: 1px solid rgba(63,234,122,.25); color: var(--accent); }
-.notice .icon { font-size: 16px; flex-shrink: 0; }
+.ai { font-size: 14px; flex-shrink: 0; }
+.alert.ok     { background: rgba(74,222,128,.07);  border: 1px solid rgba(74,222,128,.2);  color: var(--accent); }
+.alert.warn   { background: rgba(251,191,36,.07);  border: 1px solid rgba(251,191,36,.2);  color: var(--warn); }
+.alert.danger { background: rgba(248,113,113,.07); border: 1px solid rgba(248,113,113,.2); color: var(--danger); }
+.alert.info   { background: rgba(74,222,128,.04);  border: 1px solid var(--border);        color: var(--text-soft); }
 
-/* ─── Tabs ──────────────────────────────────────────────────────────────── */
-.tabs {
-  display: flex;
-  gap: 4px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 24px;
+/* collapsible tip */
+.tip-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; color: var(--muted); cursor: pointer;
+  padding: 4px 0; border: none; background: none; margin-bottom: 6px;
 }
+.tip-btn:hover { color: var(--text-soft); }
+.tip-arrow { transition: transform .18s; }
+.tip-btn.open .tip-arrow { transform: rotate(90deg); }
+.tip-body {
+  display: none; background: rgba(251,191,36,.04);
+  border: 1px solid rgba(251,191,36,.15); border-radius: var(--radius-sm);
+  padding: 10px 14px; font-size: 12.5px; color: var(--text-soft);
+  margin-bottom: 16px; line-height: 1.6;
+}
+.tip-body.open { display: block; }
+.tip-body code { font-family: var(--font-mono); font-size: 11px; background: rgba(255,255,255,.06); padding: 1px 4px; border-radius: 3px; }
+
+/* ── Tabs ───────────────────────────────────────────────────────── */
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 26px; }
 .tab-btn {
-  padding: 10px 20px;
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: color .15s, border-color .15s;
-  position: relative;
-  top: 1px;
+  padding: 10px 16px; border: none; background: transparent;
+  color: var(--muted); font-family: var(--font); font-size: 13px; font-weight: 500;
+  cursor: pointer; border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s; position: relative; top: 1px;
 }
 .tab-btn:hover { color: var(--text); }
 .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
-.tab-btn .badge {
-  display: inline-block;
-  background: var(--surface2);
-  border-radius: 10px;
-  padding: 1px 7px;
-  font-size: 10px;
-  margin-left: 6px;
-  color: var(--muted);
+.badge {
+  display: inline-block; background: var(--surface2); border-radius: 10px;
+  padding: 1px 7px; font-size: 11px; margin-left: 5px; color: var(--muted);
 }
-.tab-btn.active .badge { background: rgba(63,234,122,.15); color: var(--accent); }
-
+.tab-btn.active .badge { background: rgba(74,222,128,.15); color: var(--accent); }
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
 
-/* ─── Tables ────────────────────────────────────────────────────────────── */
-.panel-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-.panel-header h3 { font-family: var(--font-head); font-size: 15px; }
+/* ── Section head ───────────────────────────────────────────────── */
+.sec-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.sec-head h3 { font-size: 15px; font-weight: 600; }
 .search-input {
-  margin-left: auto;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 6px 12px;
-  color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  width: 220px;
-  outline: none;
-  transition: border-color .15s;
+  margin-left: auto; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 7px 12px;
+  color: var(--text); font-family: var(--font); font-size: 13px;
+  width: 200px; outline: none; transition: border-color .15s;
 }
-.search-input:focus { border-color: var(--accent2); }
+.search-input:focus { border-color: var(--accent); }
 .search-input::placeholder { color: var(--muted); }
 
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
+/* ── Table ──────────────────────────────────────────────────────── */
+.tbl-wrap { border-radius: var(--radius-sm); border: 1px solid var(--border); overflow-x: auto; margin-bottom: 22px; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .data-table th {
-  text-align: left;
-  padding: 10px 14px;
-  background: var(--surface2);
-  color: var(--muted);
-  font-weight: 500;
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
+  text-align: left; padding: 9px 14px; background: var(--surface2);
+  color: var(--muted); font-size: 11px; font-weight: 500; letter-spacing: .04em;
+  border-bottom: 1px solid var(--border); white-space: nowrap;
 }
-.data-table td {
-  padding: 9px 14px;
-  border-bottom: 1px solid rgba(39,45,61,.6);
-  vertical-align: top;
-  color: var(--text);
-}
-.data-table tr:hover td { background: rgba(255,255,255,.02); }
+.data-table td { padding: 9px 14px; border-bottom: 1px solid rgba(30,64,48,.5); vertical-align: top; }
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover td { background: rgba(74,222,128,.025); }
+
+.mono  { font-family: var(--font-mono); font-size: 12px; }
+.green { color: var(--accent); }
+.soft  { color: var(--text-soft); }
+.muted { color: var(--muted); }
 
 .chip {
-  display: inline-block;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 2px 8px;
-  font-size: 11px;
-  color: var(--accent2);
-  margin: 2px 2px 0 0;
+  display: inline-block; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 4px; padding: 2px 7px; font-size: 11px;
+  color: var(--text-soft); margin: 1px 2px 1px 0;
 }
-.chip-green { border-color: rgba(63,234,122,.3); color: var(--accent); background: rgba(63,234,122,.05); }
+.chip-g { border-color: rgba(74,222,128,.3); color: var(--accent); background: rgba(74,222,128,.06); }
 
-/* ─── Edit Forms ────────────────────────────────────────────────────────── */
+/* ── Cards ──────────────────────────────────────────────────────── */
 .card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
-  margin-bottom: 16px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px 22px; margin-bottom: 14px;
 }
-.card h4 { font-family: var(--font-head); font-size: 14px; margin-bottom: 14px; color: var(--accent2); }
+.card-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.card-sub   { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
 
-.form-row {
-  display: flex;
-  gap: 10px;
-  align-items: flex-end;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
+.form-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+  gap: 12px; margin-bottom: 14px;
 }
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  flex: 1;
-  min-width: 140px;
+.fg { display: flex; flex-direction: column; gap: 5px; }
+.fg label {
+  font-size: 11px; font-weight: 500; color: var(--text-soft);
+  text-transform: uppercase; letter-spacing: .05em; display: flex; align-items: center; gap: 5px;
 }
-.form-group label {
-  font-size: 10px;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-.form-group label .cs-warn {
-  color: var(--warn);
-  font-size: 9px;
-  margin-left: 4px;
+.cs {
+  font-size: 9px; background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.2);
+  color: var(--warn); padding: 1px 5px; border-radius: 3px; text-transform: none; letter-spacing: 0;
 }
 
 input[type=text], select {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 8px 12px;
-  color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  outline: none;
-  width: 100%;
-  transition: border-color .15s;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 8px 11px;
+  color: var(--text); font-family: var(--font); font-size: 13px;
+  outline: none; width: 100%; transition: border-color .15s;
 }
-input[type=text]:focus, select:focus { border-color: var(--accent2); }
+input[type=text]:focus, select:focus { border-color: var(--accent); }
+input.valid   { border-color: rgba(74,222,128,.55); }
+input.invalid { border-color: rgba(248,113,113,.55); }
 select option { background: var(--surface2); }
 
-/* Live validation states */
-input.valid   { border-color: rgba(63,234,122,.5); }
-input.invalid { border-color: rgba(255,79,79,.5); }
-.field-hint { font-size: 10px; color: var(--muted); margin-top: 3px; }
-.field-hint.warn  { color: var(--warn); }
-.field-hint.ok    { color: var(--accent); }
-.field-hint.error { color: var(--danger); }
+.fh { font-size: 11px; min-height: 15px; color: var(--muted); }
+.fh.ok    { color: var(--accent); }
+.fh.err   { color: var(--danger); }
+.fh.warn  { color: var(--warn); }
 
-/* ─── Buttons ───────────────────────────────────────────────────────────── */
+.form-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* ── Buttons ────────────────────────────────────────────────────── */
 .btn {
-  padding: 8px 18px;
-  border: none;
-  border-radius: 6px;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  cursor: pointer;
-  transition: opacity .15s, box-shadow .15s;
-  white-space: nowrap;
-  font-weight: 500;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border: none; border-radius: var(--radius-sm);
+  font-family: var(--font); font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: opacity .15s, box-shadow .15s; white-space: nowrap;
 }
 .btn:disabled { opacity: .4; cursor: not-allowed; }
-.btn-primary  { background: var(--accent);  color: #0d0f12; }
-.btn-primary:hover:not(:disabled)  { box-shadow: 0 0 12px rgba(63,234,122,.4); }
-.btn-blue     { background: var(--accent2); color: #0d0f12; }
-.btn-blue:hover:not(:disabled)     { box-shadow: 0 0 12px rgba(42,196,255,.35); }
-.btn-danger   { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
-.btn-danger:hover:not(:disabled)   { background: rgba(255,79,79,.1); }
-.btn-ghost    { background: transparent; border: 1px solid var(--border); color: var(--muted); }
-.btn-ghost:hover:not(:disabled)    { border-color: var(--text); color: var(--text); }
+.btn-p { background: var(--accent); color: #071a0e; }
+.btn-p:hover:not(:disabled) { box-shadow: 0 0 12px rgba(74,222,128,.35); }
+.btn-d { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
+.btn-d:hover:not(:disabled) { background: rgba(248,113,113,.08); }
+.btn-g { background: transparent; border: 1px solid var(--border); color: var(--text-soft); }
+.btn-g:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 
-/* ─── Queue / Operations ────────────────────────────────────────────────── */
-#op-queue { margin-top: 8px; }
+/* ── Queue ──────────────────────────────────────────────────────── */
 .op-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  margin-bottom: 6px;
-  font-size: 11px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 13px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 7px;
 }
-.op-item .op-type {
-  background: rgba(63,234,122,.1);
-  border: 1px solid rgba(63,234,122,.2);
-  color: var(--accent);
-  padding: 1px 8px;
-  border-radius: 4px;
-  font-size: 10px;
-  white-space: nowrap;
+.op-type {
+  font-family: var(--font-mono); font-size: 10px;
+  background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.2);
+  color: var(--accent); padding: 2px 7px; border-radius: 4px; white-space: nowrap; flex-shrink: 0;
 }
-.op-item .op-desc { flex: 1; color: var(--text); }
-.op-item .op-remove { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 14px; padding: 0 4px; }
+.op-desc { flex: 1; color: var(--text-soft); font-size: 12px; }
+.op-rm { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 15px; padding: 0 3px; transition: color .15s; }
+.op-rm:hover { color: var(--danger); }
 
-/* ─── Consistency Panel ─────────────────────────────────────────────────── */
-#consistency-result {
-  margin-top: 16px;
+/* ── Ind props ──────────────────────────────────────────────────── */
+.expand-btn {
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  font-size: 11px; padding: 2px 6px; border-radius: 4px; font-family: var(--font);
+  transition: color .15s, background .15s;
 }
+.expand-btn:hover { color: var(--accent); background: rgba(74,222,128,.07); }
+.ind-props-row td { padding: 0 !important; }
+.ind-props { padding: 8px 14px 11px 30px; background: rgba(13,36,22,.7); font-size: 12px; }
+.pl { display: flex; gap: 6px; margin-bottom: 2px; align-items: baseline; }
+.pk { font-size: 10px; color: var(--muted); font-family: var(--font-mono); background: var(--surface2); padding: 1px 4px; border-radius: 3px; }
+.pn { color: var(--text-soft); font-family: var(--font-mono); font-size: 11px; }
+.pa { color: var(--border); }
+.pv { color: var(--text); }
 
-/* ─── Footer / Apply bar ────────────────────────────────────────────────── */
-.sticky-bar {
-  position: sticky;
-  bottom: 0;
-  background: linear-gradient(0deg, var(--bg) 60%, transparent);
-  padding: 20px 32px;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  justify-content: flex-end;
+/* ── Bottom bar ─────────────────────────────────────────────────── */
+.bottom-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--surface); border-top: 1px solid var(--border);
+  padding: 12px 28px; display: flex; align-items: center; gap: 12px; z-index: 100;
 }
-.queue-count {
-  margin-right: auto;
-  font-size: 12px;
-  color: var(--muted);
+.q-info { font-size: 13px; color: var(--muted); margin-right: auto; }
+.q-info strong { color: var(--accent); }
+
+/* ── Spinner ────────────────────────────────────────────────────── */
+.spin {
+  display: inline-block; width: 13px; height: 13px;
+  border: 2px solid rgba(74,222,128,.2); border-top-color: var(--accent);
+  border-radius: 50%; animation: sp .6s linear infinite;
 }
-.queue-count span { color: var(--accent); font-weight: 600; }
+@keyframes sp { to { transform: rotate(360deg); } }
 
-/* ─── Spinner ───────────────────────────────────────────────────────────── */
-.spinner {
-  display: inline-block;
-  width: 14px; height: 14px;
-  border: 2px solid rgba(255,255,255,.2);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin .7s linear infinite;
-  vertical-align: middle;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ─── Scrollable containers ─────────────────────────────────────────────── */
-.scroll-table { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
-
-/* ─── Collapsible rows for individuals ─────────────────────────────────── */
-.expand-btn { background: none; border: none; color: var(--accent2); cursor: pointer; font-size: 11px; }
-.ind-props { padding: 8px 14px 12px 28px; background: rgba(10,22,16,.7); font-size: 11px; }
-.prop-line { display: flex; gap: 6px; margin-bottom: 3px; color: var(--muted); }
-.prop-line .pname { color: var(--accent2); }
-.prop-line .pval  { color: var(--text); }
-
-/* ─── Responsive ────────────────────────────────────────────────────────── */
-@media (max-width: 700px) {
-  .container { padding: 16px; }
-  header { padding: 16px; flex-wrap: wrap; }
-  .form-row { flex-direction: column; }
-  .search-input { width: 100%; }
-}
-
-/* ─── Utility ───────────────────────────────────────────────────────────── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
+.empty-state { text-align: center; padding: 36px 20px; color: var(--muted); font-size: 13px; }
 .hidden { display: none !important; }
-.text-muted { color: var(--muted); }
-.text-accent { color: var(--accent); }
-.text-warn { color: var(--warn); }
-.text-danger { color: var(--danger); }
-.mb8 { margin-bottom: 8px; }
-.mt8 { margin-top: 8px; }
-hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
 </style>
 </head>
 <body>
 
 <header>
-  <div>
-    <div class="logo">🌶 Ontology Refiner</div>
-    <div class="subtitle">Cabai-LLM — Stage 4 Refinement</div>
-  </div>
-  <div class="api-badge">API: <span id="api-url-display" style="color:var(--accent)">railway (configured)</span></div>
+  <div class="logo">🌶 Ontology Refiner <span>Cabai-LLM · Stage 4</span></div>
+  <div class="status-pill"><div class="dot"></div> Backend connected</div>
 </header>
 
-<!-- ═══ Config + Upload ══════════════════════════════════════════════════════ -->
-<div class="container">
+<div class="page">
 
-  <!-- API URL is hardcoded — no config card needed -->
-
-  <!-- Global notices -->
-  <div class="notice warn">
-    <span class="icon">⚠️</span>
-    <div>
-      <strong>Case sensitivity:</strong> All class names, individual names, and property names are
-      <strong>case-insensitive</strong> when searching — the backend normalises lookups to lowercase.
-      However, the <em>new</em> name you assign will be stored exactly as you type it, including capitalisation.
-    </div>
-  </div>
-  <div class="notice info">
-    <span class="icon">ℹ️</span>
-    <div>
-      Your OWL file is processed <strong>in memory only</strong> — no data is stored on the server.
-      Changes are queued locally and applied in one batch when you click <em>Apply All Operations</em>.
-    </div>
-  </div>
-
-  <!-- Upload zone -->
-  <div id="upload-zone" onclick="document.getElementById('file-input').click()"
+  <!-- Upload -->
+  <div id="upload-zone"
+       onclick="document.getElementById('file-input').click()"
        ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
     <input type="file" id="file-input" accept=".owl,.rdf,.xml" onchange="handleFileSelect(event)"/>
-    <div class="icon">🦉</div>
-    <h2>Drop your <code>.owl</code> file here</h2>
-    <p>or click to browse — accepts <code>.owl</code>, <code>.rdf</code>, <code>.xml</code></p>
+    <div class="up-icon">🦉</div>
+    <h2>Upload your ontology file</h2>
+    <p>Drag & drop or click to browse &nbsp;·&nbsp; Accepts .owl &nbsp;.rdf &nbsp;.xml</p>
   </div>
 
-  <!-- Loading / error state -->
-  <div id="loading-bar" class="notice info hidden">
-    <span class="spinner"></span>&nbsp; Parsing ontology…
+  <div id="loading-bar" class="alert info hidden">
+    <span class="spin"></span>&ensp;Parsing ontology, please wait…
   </div>
-  <div id="parse-error" class="notice danger hidden">
-    <span class="icon">🚨</span><span id="parse-error-msg"></span>
+  <div id="parse-error" class="alert danger hidden">
+    <span class="ai">⚠</span><span id="parse-error-msg"></span>
   </div>
 
-  <!-- ═══ Main Workspace ═══════════════════════════════════════════════════ -->
+  <!-- Workspace -->
   <div id="workspace" class="hidden">
 
-    <div class="notice ok" style="margin-bottom:16px">
-      <span class="icon">✅</span>
-      <span id="parse-summary"></span>
+    <div class="alert ok" style="margin-bottom:20px">
+      <span class="ai">✓</span><span id="parse-summary"></span>
     </div>
 
     <div class="tabs">
-      <button class="tab-btn active" onclick="showTab('classes')">
-        Classes <span class="badge" id="badge-classes">0</span>
-      </button>
-      <button class="tab-btn" onclick="showTab('individuals')">
-        Individuals <span class="badge" id="badge-individuals">0</span>
-      </button>
-      <button class="tab-btn" onclick="showTab('properties')">
-        Properties <span class="badge" id="badge-props">0</span>
-      </button>
-      <button class="tab-btn" onclick="showTab('operations')">
-        Edit Queue <span class="badge" id="badge-ops">0</span>
-      </button>
-      <button class="tab-btn" onclick="showTab('consistency')">
-        Consistency
-      </button>
+      <button class="tab-btn active" onclick="showTab('classes')">Classes <span class="badge" id="badge-classes">0</span></button>
+      <button class="tab-btn" onclick="showTab('individuals')">Individuals <span class="badge" id="badge-individuals">0</span></button>
+      <button class="tab-btn" onclick="showTab('properties')">Properties <span class="badge" id="badge-props">0</span></button>
+      <button class="tab-btn" onclick="showTab('operations')">Queue <span class="badge" id="badge-ops">0</span></button>
+      <button class="tab-btn" onclick="showTab('consistency')">Consistency</button>
     </div>
 
-    <!-- ── Classes Tab ──────────────────────────────────────────────────── -->
+    <!-- CLASSES -->
     <div class="tab-panel active" id="tab-classes">
-      <div class="panel-header">
+      <div class="sec-head">
         <h3>Classes</h3>
-        <input class="search-input" type="text" placeholder="🔍 Filter classes…" oninput="filterTable('classes-table', this.value)"/>
+        <input class="search-input" type="text" placeholder="Search…" oninput="filterTable('classes-table',this.value)"/>
       </div>
-
-      <div class="notice warn" style="margin-bottom:12px">
-        <span class="icon">⚠️</span>
-        <div><strong>Name lookup is case-insensitive</strong> — but the new name you type will be saved as-is.
-        Spaces in names are allowed by owlready2 but may cause issues; prefer underscores.</div>
-      </div>
-
-      <div class="scroll-table mb8">
+      <div class="tbl-wrap">
         <table class="data-table" id="classes-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Label</th>
-              <th>Comment / Description</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Name</th><th>Label</th><th>Comment</th><th></th></tr></thead>
           <tbody id="classes-tbody"></tbody>
         </table>
       </div>
-
       <hr class="divider"/>
       <div class="card">
-        <h4>✏️ Edit Class</h4>
-        <div class="notice info" style="margin-bottom:12px; font-size:11px;">
-          <span class="icon">ℹ️</span>
-          Use the <strong>Name</strong> field to identify the class (case-insensitive search).
-          Leave "New Name" blank if you only want to update label/comment.
+        <div class="card-title">✏️ Edit a Class</div>
+        <div class="card-sub">Enter the class name to find it, then fill in only what you want to change.</div>
+
+        <button class="tip-btn" onclick="toggleTip('tip-cls')">
+          <span class="tip-arrow">▶</span> Tips on names &amp; case sensitivity
+        </button>
+        <div class="tip-body" id="tip-cls">
+          Searching is <strong>case-insensitive</strong> — <code>cabai</code> will match <code>Cabai</code>.<br/>
+          The <strong>new name you type is saved exactly as-is</strong> — capitalisation matters for the stored value.<br/>
+          Prefer underscores over spaces (e.g. <code>Cabai_Merah</code>).
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Class Name <span class="cs-warn">⚠ search is case-insensitive</span></label>
-            <input type="text" id="cls-target" placeholder="e.g. Cabai" oninput="liveValidate('cls-target','class')"/>
-            <div class="field-hint" id="cls-target-hint"></div>
+
+        <div class="form-grid">
+          <div class="fg">
+            <label>Class Name <span class="cs">case-insensitive</span></label>
+            <input type="text" id="cls-target" placeholder="e.g. Cabai" oninput="lv('cls-target','class')"/>
+            <div class="fh" id="cls-target-hint"></div>
           </div>
-          <div class="form-group">
-            <label>New Name (optional)</label>
-            <input type="text" id="cls-newname" placeholder="e.g. Pepper"/>
+          <div class="fg">
+            <label>New Name <span style="font-size:10px;color:var(--muted);text-transform:none">(optional)</span></label>
+            <input type="text" id="cls-newname" placeholder="Leave blank to skip"/>
           </div>
-          <div class="form-group">
-            <label>New Label (optional)</label>
+          <div class="fg">
+            <label>New Label <span style="font-size:10px;color:var(--muted);text-transform:none">(optional)</span></label>
             <input type="text" id="cls-label" placeholder="Human-readable label"/>
           </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group" style="flex:3">
-            <label>New Description / Comment (optional)</label>
-            <input type="text" id="cls-comment" placeholder="rdfs:comment value"/>
+          <div class="fg">
+            <label>New Comment <span style="font-size:10px;color:var(--muted);text-transform:none">(optional)</span></label>
+            <input type="text" id="cls-comment" placeholder="rdfs:comment text"/>
           </div>
-          <button class="btn btn-primary" onclick="enqueueClassEdit()">+ Add to Queue</button>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-p" onclick="enqueueClassEdit()">Add to Queue</button>
         </div>
       </div>
     </div>
 
-    <!-- ── Individuals Tab ──────────────────────────────────────────────── -->
+    <!-- INDIVIDUALS -->
     <div class="tab-panel" id="tab-individuals">
-      <div class="panel-header">
+      <div class="sec-head">
         <h3>Individuals</h3>
-        <input class="search-input" type="text" placeholder="🔍 Filter individuals…" oninput="filterTable('ind-table', this.value)"/>
+        <input class="search-input" type="text" placeholder="Search…" oninput="filterTable('ind-table',this.value)"/>
       </div>
-
-      <div class="notice warn" style="margin-bottom:12px">
-        <span class="icon">⚠️</span>
-        <div>Individual names are matched <strong>case-insensitively</strong>.
-        The stored name will match exactly what you type in the "New Name" field.
-        Deleting an individual <strong>cannot be undone</strong> after you apply operations.</div>
-      </div>
-
-      <div class="scroll-table mb8">
+      <div class="tbl-wrap">
         <table class="data-table" id="ind-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Class(es)</th>
-              <th>Properties</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Name</th><th>Class(es)</th><th>Properties</th></tr></thead>
           <tbody id="ind-tbody"></tbody>
         </table>
       </div>
-
       <hr class="divider"/>
 
-      <!-- Rename individual -->
-      <div class="card mb8">
-        <h4>✏️ Rename Individual</h4>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Current Name <span class="cs-warn">⚠ case-insensitive</span></label>
-            <input type="text" id="ind-rename-target" placeholder="Current individual name" oninput="liveValidate('ind-rename-target','individual')"/>
-            <div class="field-hint" id="ind-rename-target-hint"></div>
+      <button class="tip-btn" onclick="toggleTip('tip-ind')">
+        <span class="tip-arrow">▶</span> Tips &amp; warnings for individual edits
+      </button>
+      <div class="tip-body" id="tip-ind">
+        Name lookup is <strong>case-insensitive</strong>. The stored name is saved exactly as you type it in "New Name".<br/>
+        <strong>Deletion is permanent</strong> after applying — all assertions referencing the individual are removed too.<br/>
+        Object property assertions link individuals to other individuals. Data property values require direct OWL file editing.
+      </div>
+
+      <div class="card">
+        <div class="card-title">✏️ Rename Individual</div>
+        <div class="form-grid">
+          <div class="fg">
+            <label>Current Name <span class="cs">case-insensitive</span></label>
+            <input type="text" id="ind-rename-target" placeholder="Current name" oninput="lv('ind-rename-target','individual')"/>
+            <div class="fh" id="ind-rename-target-hint"></div>
           </div>
-          <div class="form-group">
+          <div class="fg">
             <label>New Name</label>
-            <input type="text" id="ind-rename-new" placeholder="New individual name"/>
+            <input type="text" id="ind-rename-new" placeholder="New name"/>
           </div>
-          <button class="btn btn-primary" onclick="enqueueRenameIndividual()">+ Queue</button>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-p" onclick="enqueueRenameInd()">Add to Queue</button>
         </div>
       </div>
 
-      <!-- Delete individual -->
-      <div class="card mb8">
-        <h4>🗑️ Delete Individual</h4>
-        <div class="notice danger" style="margin-bottom:10px; font-size:11px;">
-          <span class="icon">🚨</span>
-          Deletion is permanent once applied. All object property assertions referencing this individual will also be removed.
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Individual Name <span class="cs-warn">⚠ case-insensitive</span></label>
-            <input type="text" id="ind-delete-name" placeholder="Name to delete" oninput="liveValidate('ind-delete-name','individual')"/>
-            <div class="field-hint" id="ind-delete-name-hint"></div>
+      <div class="card">
+        <div class="card-title">🗑️ Delete Individual</div>
+        <div class="card-sub" style="color:var(--danger)">Permanent after applying. Cannot be undone.</div>
+        <div class="form-grid">
+          <div class="fg">
+            <label>Individual Name <span class="cs">case-insensitive</span></label>
+            <input type="text" id="ind-delete-name" placeholder="Name to delete" oninput="lv('ind-delete-name','individual')"/>
+            <div class="fh" id="ind-delete-name-hint"></div>
           </div>
-          <button class="btn btn-danger" onclick="enqueueDeleteIndividual()">+ Queue Delete</button>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-d" onclick="enqueueDeleteInd()">Queue Deletion</button>
         </div>
       </div>
 
-      <!-- Add individual -->
-      <div class="card mb8">
-        <h4>➕ Add Individual</h4>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Class <span class="cs-warn">⚠ case-insensitive</span></label>
-            <input type="text" id="ind-add-class" placeholder="Parent class" oninput="liveValidate('ind-add-class','class')"/>
-            <div class="field-hint" id="ind-add-class-hint"></div>
+      <div class="card">
+        <div class="card-title">➕ Add Individual</div>
+        <div class="form-grid">
+          <div class="fg">
+            <label>Parent Class <span class="cs">case-insensitive</span></label>
+            <input type="text" id="ind-add-class" placeholder="Class name" oninput="lv('ind-add-class','class')"/>
+            <div class="fh" id="ind-add-class-hint"></div>
           </div>
-          <div class="form-group">
+          <div class="fg">
             <label>New Individual Name</label>
             <input type="text" id="ind-add-name" placeholder="e.g. Cabai_Baru_1"/>
           </div>
-          <button class="btn btn-primary" onclick="enqueueAddIndividual()">+ Queue</button>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-p" onclick="enqueueAddInd()">Add to Queue</button>
         </div>
       </div>
 
-      <!-- Manage assertions -->
       <div class="card">
-        <h4>🔗 Object Property Assertions</h4>
-        <div class="notice info" style="margin-bottom:12px; font-size:11px;">
-          <span class="icon">ℹ️</span>
-          These apply to <em>object properties</em> (individual → individual links).
-          For data properties (string/number values), re-upload a manually edited OWL file.
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Subject <span class="cs-warn">⚠ case-insensitive</span></label>
-            <input type="text" id="assert-subj" placeholder="Subject individual" oninput="liveValidate('assert-subj','individual')"/>
-            <div class="field-hint" id="assert-subj-hint"></div>
+        <div class="card-title">🔗 Object Property Assertions</div>
+        <div class="card-sub">Links between individuals (individual → individual).</div>
+        <div class="form-grid">
+          <div class="fg">
+            <label>Subject <span class="cs">case-insensitive</span></label>
+            <input type="text" id="assert-subj" placeholder="Subject individual" oninput="lv('assert-subj','individual')"/>
+            <div class="fh" id="assert-subj-hint"></div>
           </div>
-          <div class="form-group">
-            <label>Property <span class="cs-warn">⚠ case-insensitive</span></label>
-            <input type="text" id="assert-prop" placeholder="Property name" oninput="liveValidate('assert-prop','property')"/>
-            <div class="field-hint" id="assert-prop-hint"></div>
+          <div class="fg">
+            <label>Property <span class="cs">case-insensitive</span></label>
+            <input type="text" id="assert-prop" placeholder="Property name" oninput="lv('assert-prop','property')"/>
+            <div class="fh" id="assert-prop-hint"></div>
           </div>
-          <div class="form-group">
-            <label>Object <span class="cs-warn">⚠ case-insensitive</span></label>
-            <input type="text" id="assert-obj" placeholder="Object individual" oninput="liveValidate('assert-obj','individual')"/>
-            <div class="field-hint" id="assert-obj-hint"></div>
+          <div class="fg">
+            <label>Object <span class="cs">case-insensitive</span></label>
+            <input type="text" id="assert-obj" placeholder="Object individual" oninput="lv('assert-obj','individual')"/>
+            <div class="fh" id="assert-obj-hint"></div>
           </div>
         </div>
-        <div class="form-row">
-          <button class="btn btn-primary" onclick="enqueueAssertion('add')">+ Queue Add Assertion</button>
-          <button class="btn btn-danger"  onclick="enqueueAssertion('delete')">+ Queue Delete Assertion</button>
+        <div class="form-actions">
+          <button class="btn btn-p" onclick="enqueueAssertion('add')">Add Assertion</button>
+          <button class="btn btn-d" onclick="enqueueAssertion('delete')">Delete Assertion</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📝 Data Property Values</div>
+        <div class="card-sub">Set or delete literal values on an individual (strings, numbers, etc.).</div>
+
+        <button class="tip-btn" onclick="toggleTip('tip-dataprop')">
+          <span class="tip-arrow">▶</span> Tips on data property values
+        </button>
+        <div class="tip-body" id="tip-dataprop">
+          Data properties hold <strong>literal values</strong> directly on an individual — e.g. <code>TinggiTanaman = "40 - 85 cm"</code>.<br/>
+          <strong>Set / overwrite</strong> replaces all existing values for that property on the individual with the new value.<br/>
+          <strong>Delete</strong> removes all values for that property from the individual.<br/>
+          Property and individual lookup is <strong>case-insensitive</strong>. The value itself is stored exactly as you type it.
+        </div>
+
+        <div class="form-grid">
+          <div class="fg">
+            <label>Individual <span class="cs">case-insensitive</span></label>
+            <input type="text" id="dp-subj" placeholder="Individual name" oninput="lv('dp-subj','individual')"/>
+            <div class="fh" id="dp-subj-hint"></div>
+          </div>
+          <div class="fg">
+            <label>Data Property <span class="cs">case-insensitive</span></label>
+            <input type="text" id="dp-prop" placeholder="Property name" oninput="lv('dp-prop','property')"/>
+            <div class="fh" id="dp-prop-hint"></div>
+          </div>
+          <div class="fg">
+            <label>New Value <span style="font-size:10px;color:var(--muted);text-transform:none">(set only)</span></label>
+            <input type="text" id="dp-value" placeholder="e.g. 40 - 85 cm"/>
+          </div>
+          <div class="fg">
+            <label>Value Type <span style="font-size:10px;color:var(--muted);text-transform:none">(set only)</span></label>
+            <select id="dp-type">
+              <option value="str">str (string, default)</option>
+              <option value="int">int (integer)</option>
+              <option value="float">float</option>
+              <option value="bool">bool (boolean)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-p" onclick="enqueueDataValue('set')">Set / Overwrite Value</button>
+          <button class="btn btn-d" onclick="enqueueDataValue('delete')">Delete Value</button>
         </div>
       </div>
     </div>
 
-    <!-- ── Properties Tab ───────────────────────────────────────────────── -->
+    <!-- PROPERTIES -->
     <div class="tab-panel" id="tab-properties">
-      <div class="panel-header">
+      <div class="sec-head">
         <h3>Properties</h3>
-        <input class="search-input" type="text" placeholder="🔍 Filter properties…" oninput="filterTable('props-table', this.value)"/>
+        <input class="search-input" type="text" placeholder="Search…" oninput="filterTable('props-table',this.value)"/>
       </div>
-
-      <div class="notice warn" style="margin-bottom:12px">
-        <span class="icon">⚠️</span>
-        <div>Property names are searched <strong>case-insensitively</strong>.
-        The stored name preserves your capitalisation exactly.</div>
-      </div>
-
-      <div class="scroll-table mb8">
+      <div class="tbl-wrap">
         <table class="data-table" id="props-table">
           <thead><tr><th>Name</th><th>Type</th><th>Domain</th><th>Range</th></tr></thead>
           <tbody id="props-tbody"></tbody>
         </table>
       </div>
-
       <hr class="divider"/>
       <div class="card">
-        <h4>✏️ Edit Property</h4>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Property Name <span class="cs-warn">⚠ case-insensitive</span></label>
-            <input type="text" id="prop-target" placeholder="Property name" oninput="liveValidate('prop-target','property')"/>
-            <div class="field-hint" id="prop-target-hint"></div>
+        <div class="card-title">✏️ Edit Property</div>
+        <div class="card-sub">Identify the property by name, then fill in only what you want to change.</div>
+
+        <button class="tip-btn" onclick="toggleTip('tip-prop')">
+          <span class="tip-arrow">▶</span> Tips on property edits
+        </button>
+        <div class="tip-body" id="tip-prop">
+          Property lookup is <strong>case-insensitive</strong>. The stored name preserves your capitalisation.<br/>
+          <strong>Range Class</strong> applies to object properties. <strong>Range Type</strong> applies to data properties. Only fill one.
+        </div>
+
+        <div class="form-grid">
+          <div class="fg">
+            <label>Property Name <span class="cs">case-insensitive</span></label>
+            <input type="text" id="prop-target" placeholder="Property name" oninput="lv('prop-target','property')"/>
+            <div class="fh" id="prop-target-hint"></div>
           </div>
-          <div class="form-group">
-            <label>New Name (optional)</label>
+          <div class="fg">
+            <label>New Name <span style="font-size:10px;color:var(--muted);text-transform:none">(optional)</span></label>
             <input type="text" id="prop-newname" placeholder="Leave blank to skip"/>
           </div>
-          <div class="form-group">
-            <label>New Domain Class (optional)</label>
-            <input type="text" id="prop-domain" placeholder="Class name" oninput="liveValidate('prop-domain','class',true)"/>
-            <div class="field-hint" id="prop-domain-hint"></div>
+          <div class="fg">
+            <label>New Domain Class <span style="font-size:10px;color:var(--muted);text-transform:none">(optional)</span></label>
+            <input type="text" id="prop-domain" placeholder="Class name" oninput="lv('prop-domain','class',true)"/>
+            <div class="fh" id="prop-domain-hint"></div>
           </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>New Range Class (object props, optional)</label>
-            <input type="text" id="prop-range-class" placeholder="Class name" oninput="liveValidate('prop-range-class','class',true)"/>
-            <div class="field-hint" id="prop-range-class-hint"></div>
+          <div class="fg">
+            <label>New Range Class <span style="font-size:10px;color:var(--muted);text-transform:none">(obj props)</span></label>
+            <input type="text" id="prop-range-class" placeholder="Class name" oninput="lv('prop-range-class','class',true)"/>
+            <div class="fh" id="prop-range-class-hint"></div>
           </div>
-          <div class="form-group">
-            <label>New Range Type (data props, optional)</label>
+          <div class="fg">
+            <label>New Range Type <span style="font-size:10px;color:var(--muted);text-transform:none">(data props)</span></label>
             <select id="prop-range-type">
               <option value="">-- skip --</option>
               <option value="str">str (string)</option>
@@ -686,534 +551,341 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
               <option value="bool">bool (boolean)</option>
             </select>
           </div>
-          <button class="btn btn-primary" onclick="enqueuePropertyEdit()">+ Add to Queue</button>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-p" onclick="enqueuePropertyEdit()">Add to Queue</button>
         </div>
       </div>
     </div>
 
-    <!-- ── Operations Queue Tab ─────────────────────────────────────────── -->
+    <!-- QUEUE -->
     <div class="tab-panel" id="tab-operations">
-      <div class="panel-header">
+      <div class="sec-head">
         <h3>Edit Queue</h3>
-        <button class="btn btn-ghost" onclick="clearQueue()" style="margin-left:auto">Clear All</button>
+        <button class="btn btn-g" style="margin-left:auto;padding:6px 13px;font-size:12px" onclick="clearQueue()">Clear All</button>
       </div>
-      <div class="notice info" style="margin-bottom:14px">
-        <span class="icon">ℹ️</span>
-        Operations are applied <strong>in order</strong>. If an earlier operation renames an entity,
-        subsequent operations must use the <em>new</em> name.
+      <div class="alert info" style="margin-bottom:18px">
+        <span class="ai">ℹ</span>
+        Operations run in order. If you rename something, use the new name in later operations.
       </div>
-      <div id="op-queue-empty" class="text-muted" style="padding:20px;text-align:center">
-        No operations queued. Use the edit forms in other tabs to add operations.
+      <div id="op-queue-empty" class="empty-state">
+        No operations queued yet.<br/>
+        <span style="font-size:12px">Use the edit forms in the other tabs to stage your changes.</span>
       </div>
       <div id="op-queue"></div>
     </div>
 
-    <!-- ── Consistency Tab ──────────────────────────────────────────────── -->
+    <!-- CONSISTENCY -->
     <div class="tab-panel" id="tab-consistency">
-      <div class="panel-header"><h3>Consistency Check</h3></div>
-      <div class="notice warn" style="margin-bottom:16px">
-        <span class="icon">⚠️</span>
-        <div>The HermiT reasoner requires <strong>Java</strong> installed on the Railway container.
-        If Java is not available, the check will return a "reasoner unavailable" message — this is not a consistency failure.
-        Apply your operations first, then run the check on the updated ontology.</div>
+      <div class="sec-head"><h3>Consistency Check</h3></div>
+      <div class="alert warn" style="margin-bottom:20px">
+        <span class="ai">⚠</span>
+        <div>The HermiT reasoner requires <strong>Java</strong> on the server. If unavailable you'll see a "reasoner unavailable" message — this is not a consistency failure. Apply your operations first, then run the check.</div>
       </div>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
-        <button class="btn btn-blue" onclick="runConsistency()">▶ Run Consistency Check</button>
-        <span id="consistency-spinner" class="hidden"><span class="spinner"></span> Running reasoner…</span>
+      <div class="form-actions" style="margin-bottom:20px">
+        <button class="btn btn-p" onclick="runConsistency()">Run Consistency Check</button>
+        <span id="consistency-spinner" class="hidden" style="display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)">
+          <span class="spin"></span> Running reasoner…
+        </span>
       </div>
       <div id="consistency-result"></div>
     </div>
 
-    <!-- ── Sticky Apply Bar ─────────────────────────────────────────────── -->
-    <div class="sticky-bar">
-      <div class="queue-count">Operations queued: <span id="queue-count-display">0</span></div>
-      <button class="btn btn-blue" onclick="downloadCurrentOwl()" id="btn-download">⬇ Download Current OWL</button>
-      <button class="btn btn-primary" onclick="applyOperations()" id="btn-apply">⚡ Apply All Operations</button>
-    </div>
-
   </div><!-- /workspace -->
-</div><!-- /container -->
+</div><!-- /page -->
+
+<div class="bottom-bar">
+  <div class="q-info">Queue: <strong id="queue-count-display">0</strong> operation(s)</div>
+  <button class="btn btn-g" onclick="downloadCurrentOwl()">⬇ Download OWL</button>
+  <button class="btn btn-p" onclick="applyOperations()" id="btn-apply">⚡ Apply All</button>
+</div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════════════════
-// State
-// ═══════════════════════════════════════════════════════════════════════════
-// ⚙️ HARDCODED RAILWAY BACKEND URL — update this when you redeploy
-const API_URL   = 'https://ontologyrefiner-production.up.railway.app';
+// ⚙️ Replace with your Railway URL
+const API_URL = 'https://ontologyrefiner-production.up.railway.app';
 
-let owlB64    = '';       // current OWL as base64 (in-memory, no server storage)
-let ontology  = null;     // parsed JSON from /parse
-let opQueue   = [];       // pending operations
+let owlB64   = '';
+let ontology = null;
+let opQueue  = [];
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Drag & Drop + File Select
-// ═══════════════════════════════════════════════════════════════════════════
-function handleDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('dragover'); }
-function handleDragLeave(e) { document.getElementById('upload-zone').classList.remove('dragover'); }
-function handleDrop(e) {
-  e.preventDefault();
-  document.getElementById('upload-zone').classList.remove('dragover');
-  const file = e.dataTransfer.files[0];
-  if (file) uploadFile(file);
+// Tips
+function toggleTip(id) {
+  const b = document.getElementById(id);
+  const t = b.previousElementSibling;
+  b.classList.toggle('open');
+  t.classList.toggle('open');
 }
-function handleFileSelect(e) { if (e.target.files[0]) uploadFile(e.target.files[0]); }
 
-async function uploadFile(file) {
-  const ext = file.name.split('.').pop().toLowerCase();
-  if (!['owl','rdf','xml'].includes(ext)) {
-    alert('Please upload an .owl, .rdf, or .xml file.');
-    return;
-  }
-  document.getElementById('loading-bar').classList.remove('hidden');
-  document.getElementById('parse-error').classList.add('hidden');
-  document.getElementById('workspace').classList.add('hidden');
+// Drag & drop
+function handleDragOver(e)  { e.preventDefault(); document.getElementById('upload-zone').classList.add('dragover'); }
+function handleDragLeave()  { document.getElementById('upload-zone').classList.remove('dragover'); }
+function handleDrop(e)      { e.preventDefault(); handleDragLeave(); const f=e.dataTransfer.files[0]; if(f) upload(f); }
+function handleFileSelect(e){ if(e.target.files[0]) upload(e.target.files[0]); }
 
-  const fd = new FormData();
-  fd.append('file', file);
+async function upload(file) {
+  if (!['owl','rdf','xml'].includes(file.name.split('.').pop().toLowerCase()))
+    return alert('Please upload an .owl, .rdf, or .xml file.');
+  s('loading-bar'); h('parse-error'); h('workspace');
+  const fd = new FormData(); fd.append('file', file);
   try {
-    const res = await fetch(`${API_URL}/parse`, { method: 'POST', body: fd });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.detail || res.statusText);
-    }
+    const res = await fetch(`${API_URL}/parse`, {method:'POST', body:fd});
+    if (!res.ok) { const e=await res.json(); throw new Error(e.detail||res.statusText); }
     const data = await res.json();
-    owlB64   = data.owl_b64;
-    ontology = data;
-    opQueue  = [];
-    renderWorkspace(data, file.name);
+    owlB64 = data.owl_b64; ontology = data; opQueue = [];
+    render(data, file.name);
   } catch(e) {
     document.getElementById('parse-error-msg').textContent = e.message;
-    document.getElementById('parse-error').classList.remove('hidden');
-  } finally {
-    document.getElementById('loading-bar').classList.add('hidden');
-  }
+    s('parse-error');
+  } finally { h('loading-bar'); }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Render Workspace
-// ═══════════════════════════════════════════════════════════════════════════
-function renderWorkspace(data, filename) {
+function render(data, fname) {
   document.getElementById('parse-summary').innerHTML =
-    `<strong>${filename}</strong> loaded — ` +
-    `${data.classes.length} classes, ${data.individuals.length} individuals, ` +
-    `${data.object_properties.length + data.data_properties.length} properties.`;
-
+    `<strong>${fname}</strong> — ${data.classes.length} classes, ${data.individuals.length} individuals, ${data.object_properties.length+data.data_properties.length} properties`;
   document.getElementById('badge-classes').textContent     = data.classes.length;
   document.getElementById('badge-individuals').textContent = data.individuals.length;
-  document.getElementById('badge-props').textContent       =
-    data.object_properties.length + data.data_properties.length;
-
+  document.getElementById('badge-props').textContent       = data.object_properties.length+data.data_properties.length;
   renderClasses(data.classes);
   renderIndividuals(data.individuals);
   renderProperties(data.object_properties, data.data_properties);
   renderQueue();
-  document.getElementById('workspace').classList.remove('hidden');
   document.getElementById('consistency-result').innerHTML = '';
+  s('workspace');
 }
 
-// ── Classes ────────────────────────────────────────────────────────────────
 function renderClasses(classes) {
-  const tbody = document.getElementById('classes-tbody');
-  tbody.innerHTML = classes.map(c => `
+  document.getElementById('classes-tbody').innerHTML = classes.map(c=>`
     <tr>
-      <td><code class="text-accent">${esc(c.name)}</code></td>
-      <td>${c.label ? `<span class="chip chip-green">${esc(c.label)}</span>` : '<span class="text-muted">—</span>'}</td>
-      <td style="max-width:360px;word-break:break-word">${c.comment ? esc(c.comment) : '<span class="text-muted">—</span>'}</td>
-      <td><button class="btn btn-ghost" style="font-size:10px;padding:4px 10px"
-            onclick="prefillClassEdit('${esc(c.name)}')">Edit</button></td>
-    </tr>
-  `).join('');
+      <td><span class="mono green">${x(c.name)}</span></td>
+      <td>${c.label?`<span class="chip chip-g">${x(c.label)}</span>`:`<span class="muted">—</span>`}</td>
+      <td style="max-width:320px;word-break:break-word" class="soft">${c.comment?x(c.comment):`<span class="muted">—</span>`}</td>
+      <td><button class="btn btn-g" style="padding:4px 11px;font-size:12px" onclick="prefillClass('${x(c.name)}')">Edit</button></td>
+    </tr>`).join('');
 }
 
-function prefillClassEdit(name) {
+function prefillClass(name) {
   document.getElementById('cls-target').value = name;
-  showTab('classes');
+  showTab('classes'); lv('cls-target','class');
   document.getElementById('cls-target').focus();
-  liveValidate('cls-target','class');
 }
 
-// ── Individuals ────────────────────────────────────────────────────────────
-function renderIndividuals(individuals) {
-  const tbody = document.getElementById('ind-tbody');
-  tbody.innerHTML = individuals.map((ind, i) => {
-    const types = ind.types.map(t => `<span class="chip">${esc(t)}</span>`).join(' ');
-    const hasProps = Object.keys(ind.object_properties).length + Object.keys(ind.data_properties).length > 0;
-    const propsHtml = hasProps ? buildPropsHtml(ind) : '';
-    return `
-      <tr id="ind-row-${i}">
-        <td>
-          <code class="text-accent">${esc(ind.name)}</code>
-          ${hasProps ? `<button class="expand-btn" onclick="toggleIndProps(${i})">▶ props</button>` : ''}
-        </td>
-        <td>${types || '<span class="text-muted">—</span>'}</td>
-        <td style="color:var(--muted);font-size:11px">
-          ${Object.keys(ind.object_properties).length} obj · ${Object.keys(ind.data_properties).length} data
-        </td>
-      </tr>
-      ${hasProps ? `<tr id="ind-props-${i}" class="hidden">
-        <td colspan="3"><div class="ind-props">${propsHtml}</div></td>
-      </tr>` : ''}
-    `;
+function renderIndividuals(inds) {
+  document.getElementById('ind-tbody').innerHTML = inds.map((ind,i)=>{
+    const types = ind.types.map(t=>`<span class="chip">${x(t)}</span>`).join(' ');
+    const oc = Object.keys(ind.object_properties).length;
+    const dc = Object.keys(ind.data_properties).length;
+    const hasP = oc+dc > 0;
+    return `<tr>
+      <td><span class="mono green">${x(ind.name)}</span>${hasP?`<button class="expand-btn" onclick="toggleP(${i},this)">▶ details</button>`:''}</td>
+      <td>${types||`<span class="muted">—</span>`}</td>
+      <td class="muted" style="font-size:12px">${oc} obj · ${dc} data</td>
+    </tr>${hasP?`<tr id="ip-${i}" class="ind-props-row hidden"><td colspan="3"><div class="ind-props">${buildP(ind)}</div></td></tr>`:''}`
   }).join('');
 }
 
-function buildPropsHtml(ind) {
-  let html = '';
-  for (const [p, vals] of Object.entries(ind.object_properties)) {
-    html += `<div class="prop-line"><span class="pname">[obj] ${esc(p)}</span><span>→</span><span class="pval">${vals.map(esc).join(', ')}</span></div>`;
-  }
-  for (const [p, vals] of Object.entries(ind.data_properties)) {
-    html += `<div class="prop-line"><span class="pname">[data] ${esc(p)}</span><span>→</span><span class="pval">${vals.map(esc).join(', ')}</span></div>`;
-  }
-  return html;
+function buildP(ind) {
+  let h='';
+  for(const [p,v] of Object.entries(ind.object_properties))
+    h+=`<div class="pl"><span class="pk">obj</span><span class="pn">${x(p)}</span><span class="pa">→</span><span class="pv">${v.map(x).join(', ')}</span></div>`;
+  for(const [p,v] of Object.entries(ind.data_properties))
+    h+=`<div class="pl"><span class="pk">data</span><span class="pn">${x(p)}</span><span class="pa">→</span><span class="pv">${v.map(x).join(', ')}</span></div>`;
+  return h;
 }
 
-function toggleIndProps(i) {
-  const row = document.getElementById(`ind-props-${i}`);
-  const btn = document.querySelector(`#ind-row-${i} .expand-btn`);
-  if (row.classList.toggle('hidden')) { btn.textContent = '▶ props'; }
-  else { btn.textContent = '▼ props'; }
+function toggleP(i,btn) {
+  const row=document.getElementById(`ip-${i}`);
+  btn.textContent = row.classList.toggle('hidden') ? '▶ details' : '▼ details';
 }
 
-// ── Properties ─────────────────────────────────────────────────────────────
-function renderProperties(obj_props, data_props) {
-  const tbody = document.getElementById('props-tbody');
-  const all = [
-    ...obj_props.map(p => ({...p, type: 'object'})),
-    ...data_props.map(p => ({...p, type: 'data'})),
-  ];
-  tbody.innerHTML = all.map(p => `
+function renderProperties(obj,data) {
+  const all=[...obj.map(p=>({...p,type:'object'})),...data.map(p=>({...p,type:'data'}))];
+  document.getElementById('props-tbody').innerHTML = all.map(p=>`
     <tr>
-      <td><code class="text-accent">${esc(p.name)}</code></td>
-      <td><span class="chip ${p.type==='object'?'chip-green':''}">${p.type}</span></td>
-      <td>${p.domain.length ? p.domain.map(d=>`<span class="chip">${esc(d)}</span>`).join(' ') : '<span class="text-muted">—</span>'}</td>
-      <td>${p.range.length  ? p.range.map(r=>`<span class="chip">${esc(r)}</span>`).join(' ')  : '<span class="text-muted">—</span>'}</td>
-    </tr>
-  `).join('');
+      <td><span class="mono green">${x(p.name)}</span></td>
+      <td><span class="chip ${p.type==='object'?'chip-g':''}">${p.type}</span></td>
+      <td>${p.domain.length?p.domain.map(d=>`<span class="chip">${x(d)}</span>`).join(' '):`<span class="muted">—</span>`}</td>
+      <td>${p.range.length?p.range.map(r=>`<span class="chip">${x(r)}</span>`).join(' '):`<span class="muted">—</span>`}</td>
+    </tr>`).join('');
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Live Validation
-// ═══════════════════════════════════════════════════════════════════════════
-function liveValidate(inputId, kind, optional=false) {
-  const input = document.getElementById(inputId);
-  const hint  = document.getElementById(`${inputId}-hint`);
-  const val   = input.value.trim();
-
-  if (!val) {
-    if (optional) { input.className=''; if(hint){hint.textContent='';hint.className='field-hint';} return; }
-    input.className='invalid';
-    if(hint){hint.textContent='Cannot be empty.'; hint.className='field-hint error';}
-    return;
-  }
-
-  if (!ontology) { input.className=''; return; }
-
-  const nl = val.toLowerCase();
-  let found = false;
-  if (kind === 'class')      found = ontology.classes.some(c => c.name.toLowerCase()===nl || (c.label||'').toLowerCase()===nl);
-  if (kind === 'individual') found = ontology.individuals.some(i => i.name.toLowerCase()===nl);
-  if (kind === 'property')   found = [...ontology.object_properties,...ontology.data_properties].some(p => p.name.toLowerCase()===nl);
-
-  if (found) {
-    input.className = 'valid';
-    if (hint) { hint.textContent = `✓ Found in ontology`; hint.className = 'field-hint ok'; }
+function lv(inputId, kind, optional=false) {
+  const el=document.getElementById(inputId);
+  const hint=document.getElementById(`${inputId}-hint`);
+  const val=el.value.trim();
+  if (!val) { el.className=''; if(hint){hint.textContent='';hint.className='fh';} return; }
+  if (!ontology) return;
+  const nl=val.toLowerCase();
+  let found=false;
+  if(kind==='class')      found=ontology.classes.some(c=>c.name.toLowerCase()===nl||(c.label||'').toLowerCase()===nl);
+  if(kind==='individual') found=ontology.individuals.some(i=>i.name.toLowerCase()===nl);
+  if(kind==='property')   found=[...ontology.object_properties,...ontology.data_properties].some(p=>p.name.toLowerCase()===nl);
+  if(found) {
+    el.className='valid';
+    if(hint){hint.textContent='✓ Found'; hint.className='fh ok';}
   } else {
-    input.className = optional ? '' : 'invalid';
-    if (hint) {
-      hint.textContent = optional ? `Not found (will be skipped)` : `⚠ Not found — check spelling`;
-      hint.className = `field-hint ${optional ? 'warn' : 'error'}`;
-    }
+    el.className=optional?'':'invalid';
+    if(hint){hint.textContent=optional?'Not found — will be skipped':'⚠ Not found — check spelling'; hint.className=`fh ${optional?'warn':'err'}`;}
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Enqueue Operations
-// ═══════════════════════════════════════════════════════════════════════════
 function enqueueClassEdit() {
-  const target  = v('cls-target');
-  const newname = v('cls-newname');
-  const label   = v('cls-label');
-  const comment = v('cls-comment');
-
-  if (!target) return alert('Class name is required.');
-  if (!newname && !label && !comment) return alert('Provide at least one change (new name, label, or comment).');
-
-  if (newname) enqueue({ op:'rename_class', target, new_name:newname },
-    `rename_class: "${target}" → "${newname}"`);
-  if (label)   enqueue({ op:'set_class_label', target: newname||target, value:label },
-    `set_class_label: "${newname||target}" → "${label}"`);
-  if (comment) enqueue({ op:'set_class_comment', target: newname||target, value:comment },
-    `set_class_comment: "${newname||target}"`);
-
-  ['cls-target','cls-newname','cls-label','cls-comment'].forEach(id => {
-    document.getElementById(id).value='';
-    document.getElementById(id).className='';
-  });
-  const h = document.getElementById('cls-target-hint');
-  if(h){h.textContent='';h.className='field-hint';}
+  const target=g('cls-target'), nn=g('cls-newname'), lbl=g('cls-label'), cmt=g('cls-comment');
+  if(!target) return alert('Class name is required.');
+  if(!nn&&!lbl&&!cmt) return alert('Provide at least one change.');
+  if(nn)  eq({op:'rename_class',      target, new_name:nn},       `rename_class: "${target}" → "${nn}"`);
+  if(lbl) eq({op:'set_class_label',   target:nn||target, value:lbl},   `set_class_label: "${nn||target}"`);
+  if(cmt) eq({op:'set_class_comment', target:nn||target, value:cmt},   `set_class_comment: "${nn||target}"`);
+  ['cls-target','cls-newname','cls-label','cls-comment'].forEach(c); clrHint('cls-target-hint');
 }
-
-function enqueueRenameIndividual() {
-  const target  = v('ind-rename-target');
-  const newname = v('ind-rename-new');
-  if (!target || !newname) return alert('Both current and new name are required.');
-  enqueue({ op:'rename_individual', target, new_name:newname },
-    `rename_individual: "${target}" → "${newname}"`);
-  ['ind-rename-target','ind-rename-new'].forEach(clear);
+function enqueueRenameInd() {
+  const t=g('ind-rename-target'), n=g('ind-rename-new');
+  if(!t||!n) return alert('Both current and new name are required.');
+  eq({op:'rename_individual',target:t,new_name:n}, `rename_individual: "${t}" → "${n}"`);
+  ['ind-rename-target','ind-rename-new'].forEach(c);
 }
-
-function enqueueDeleteIndividual() {
-  const name = v('ind-delete-name');
-  if (!name) return alert('Individual name is required.');
-  if (!confirm(`Queue deletion of individual "${name}"?\nThis cannot be undone after applying.`)) return;
-  enqueue({ op:'delete_individual', target:name }, `delete_individual: "${name}"`);
-  clear('ind-delete-name');
+function enqueueDeleteInd() {
+  const n=g('ind-delete-name');
+  if(!n) return alert('Individual name is required.');
+  if(!confirm(`Queue deletion of "${n}"?\nThis cannot be undone after applying.`)) return;
+  eq({op:'delete_individual',target:n}, `delete_individual: "${n}"`);
+  c('ind-delete-name');
 }
-
-function enqueueAddIndividual() {
-  const cls  = v('ind-add-class');
-  const name = v('ind-add-name');
-  if (!cls || !name) return alert('Class and individual name are both required.');
-  enqueue({ op:'add_individual', class_name:cls, name }, `add_individual: "${name}" of type "${cls}"`);
-  ['ind-add-class','ind-add-name'].forEach(clear);
+function enqueueAddInd() {
+  const cls=g('ind-add-class'), name=g('ind-add-name');
+  if(!cls||!name) return alert('Both class and individual name are required.');
+  eq({op:'add_individual',class_name:cls,name}, `add_individual: "${name}" of class "${cls}"`);
+  ['ind-add-class','ind-add-name'].forEach(c);
 }
-
 function enqueueAssertion(mode) {
-  const subj = v('assert-subj');
-  const prop = v('assert-prop');
-  const obj  = v('assert-obj');
-  if (!subj || !prop || !obj) return alert('Subject, property, and object are all required.');
-  const op = mode === 'add' ? 'add_assertion' : 'delete_assertion';
-  const label = `${op}: "${subj}" —[${prop}]→ "${obj}"`;
-  enqueue({ op, subject:subj, property:prop, object:obj }, label);
-  ['assert-subj','assert-prop','assert-obj'].forEach(clear);
+  const subj=g('assert-subj'), prop=g('assert-prop'), obj=g('assert-obj');
+  if(!subj||!prop||!obj) return alert('Subject, property, and object are all required.');
+  const op=mode==='add'?'add_assertion':'delete_assertion';
+  eq({op,subject:subj,property:prop,object:obj}, `${op}: "${subj}" —[${prop}]→ "${obj}"`);
+  ['assert-subj','assert-prop','assert-obj'].forEach(c);
 }
-
+function enqueueDataValue(mode) {
+  const subj=g('dp-subj'), prop=g('dp-prop');
+  if(!subj||!prop) return alert('Individual and property name are both required.');
+  if(mode==='set') {
+    const val=g('dp-value');
+    if(!val) return alert('A value is required for Set.');
+    const vtype=document.getElementById('dp-type').value;
+    eq({op:'set_data_value', subject:subj, property:prop, value:val, value_type:vtype},
+       `set_data_value: "${subj}" [${prop}] = "${val}" (${vtype})`);
+    c('dp-value');
+  } else {
+    if(!confirm(`Queue deletion of all values for property "${prop}" on "${subj}"?`)) return;
+    eq({op:'delete_data_value', subject:subj, property:prop},
+       `delete_data_value: "${subj}" [${prop}]`);
+  }
+  ['dp-subj','dp-prop'].forEach(c);
+  ['dp-subj-hint','dp-prop-hint'].forEach(clrHint);
+}
 function enqueuePropertyEdit() {
-  const target     = v('prop-target');
-  const newname    = v('prop-newname');
-  const domain     = v('prop-domain');
-  const rangeClass = v('prop-range-class');
-  const rangeType  = document.getElementById('prop-range-type').value;
-
-  if (!target) return alert('Property name is required.');
-  if (!newname && !domain && !rangeClass && !rangeType)
-    return alert('Provide at least one change.');
-
-  const effective = newname || target;
-  if (newname) enqueue({ op:'rename_property', target, new_name:newname },
-    `rename_property: "${target}" → "${newname}"`);
-  if (domain)     enqueue({ op:'set_prop_domain',      target:effective, class_name:domain },
-    `set_prop_domain: "${effective}" domain → "${domain}"`);
-  if (rangeClass) enqueue({ op:'set_prop_range_class', target:effective, class_name:rangeClass },
-    `set_prop_range_class: "${effective}" range → "${rangeClass}"`);
-  if (rangeType)  enqueue({ op:'set_prop_range_type',  target:effective, range_type:rangeType },
-    `set_prop_range_type: "${effective}" range → ${rangeType}`);
-
-  ['prop-target','prop-newname','prop-domain','prop-range-class'].forEach(clear);
+  const t=g('prop-target'), nn=g('prop-newname'), dom=g('prop-domain'),
+        rc=g('prop-range-class'), rt=document.getElementById('prop-range-type').value;
+  if(!t) return alert('Property name is required.');
+  if(!nn&&!dom&&!rc&&!rt) return alert('Provide at least one change.');
+  const eff=nn||t;
+  if(nn)  eq({op:'rename_property',     target:t, new_name:nn},    `rename_property: "${t}" → "${nn}"`);
+  if(dom) eq({op:'set_prop_domain',     target:eff, class_name:dom},    `set_prop_domain: "${eff}" → "${dom}"`);
+  if(rc)  eq({op:'set_prop_range_class',target:eff, class_name:rc},     `set_prop_range_class: "${eff}" → "${rc}"`);
+  if(rt)  eq({op:'set_prop_range_type', target:eff, range_type:rt},     `set_prop_range_type: "${eff}" → ${rt}`);
+  ['prop-target','prop-newname','prop-domain','prop-range-class'].forEach(c);
   document.getElementById('prop-range-type').value='';
-  ['prop-target-hint','prop-domain-hint','prop-range-class-hint'].forEach(id => {
-    const el=document.getElementById(id); if(el){el.textContent='';el.className='field-hint';}
-  });
+  ['prop-target-hint','prop-domain-hint','prop-range-class-hint'].forEach(clrHint);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Queue Rendering
-// ═══════════════════════════════════════════════════════════════════════════
-function enqueue(op, desc) {
-  opQueue.push({ op, desc });
-  renderQueue();
-  showTab('operations');
-}
+function eq(op, desc) { opQueue.push({op,desc}); renderQueue(); showTab('operations'); }
 
 function renderQueue() {
-  const container = document.getElementById('op-queue');
-  const empty     = document.getElementById('op-queue-empty');
-  document.getElementById('queue-count-display').textContent = opQueue.length;
-  document.getElementById('badge-ops').textContent = opQueue.length;
-
-  if (opQueue.length === 0) { container.innerHTML=''; empty.style.display='block'; return; }
-  empty.style.display = 'none';
-
-  container.innerHTML = opQueue.map((item, i) => `
+  const qc=document.getElementById('op-queue'), emp=document.getElementById('op-queue-empty');
+  document.getElementById('queue-count-display').textContent=opQueue.length;
+  document.getElementById('badge-ops').textContent=opQueue.length;
+  if(!opQueue.length){qc.innerHTML='';emp.style.display='block';return;}
+  emp.style.display='none';
+  qc.innerHTML=opQueue.map((item,i)=>`
     <div class="op-item">
-      <span class="op-type">${esc(item.op.op)}</span>
-      <span class="op-desc">${esc(item.desc)}</span>
-      <button class="op-remove" onclick="removeOp(${i})" title="Remove">✕</button>
-    </div>
-  `).join('');
+      <span class="op-type">${x(item.op.op)}</span>
+      <span class="op-desc">${x(item.desc)}</span>
+      <button class="op-rm" onclick="rmOp(${i})" title="Remove">✕</button>
+    </div>`).join('');
 }
+function rmOp(i){opQueue.splice(i,1);renderQueue();}
+function clearQueue(){if(!confirm('Clear all queued operations?'))return;opQueue=[];renderQueue();}
 
-function removeOp(i) {
-  opQueue.splice(i, 1);
-  renderQueue();
-}
-
-function clearQueue() {
-  if (!confirm('Clear all queued operations?')) return;
-  opQueue = [];
-  renderQueue();
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Apply Operations
-// ═══════════════════════════════════════════════════════════════════════════
 async function applyOperations() {
-  if (!owlB64)        return alert('Load an OWL file first.');
-  if (opQueue.length === 0) return alert('No operations queued.');
-
-  const btn = document.getElementById('btn-apply');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Applying…';
-
+  if(!owlB64) return alert('Load an OWL file first.');
+  if(!opQueue.length) return alert('No operations queued.');
+  const btn=document.getElementById('btn-apply');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Applying…';
   try {
-    const res = await fetch(`${API_URL}/mutate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ owl_b64: owlB64, operations: opQueue.map(i => i.op) }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || res.statusText);
-
-    owlB64 = data.owl_b64;
-
-    const errCount = (data.errors||[]).length;
-    let msg = `✅ Applied ${data.applied} operation(s).`;
-    if (errCount) {
-      msg += `\n\n⚠️ ${errCount} error(s):\n` +
-        data.errors.map(e => `  Op #${e.op_index+1} (${e.op}): ${e.error}`).join('\n');
-    }
-    alert(msg);
-
-    opQueue = [];
-    renderQueue();
-
-    // Re-parse to refresh tables
-    await refreshParse();
-
-  } catch(e) {
-    alert('Error applying operations: ' + e.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '⚡ Apply All Operations';
-  }
+    const res=await fetch(`${API_URL}/mutate`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({owl_b64:owlB64,operations:opQueue.map(i=>i.op)})});
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.detail||res.statusText);
+    owlB64=data.owl_b64;
+    const ec=(data.errors||[]).length;
+    let msg=`✅ Applied ${data.applied} operation(s).`;
+    if(ec) msg+=`\n\n⚠️ ${ec} error(s):\n`+data.errors.map(e=>`  Op #${e.op_index+1} (${e.op}): ${e.error}`).join('\n');
+    alert(msg); opQueue=[]; renderQueue(); await refreshParse();
+  } catch(e){alert('Error: '+e.message);}
+  finally{btn.disabled=false;btn.innerHTML='⚡ Apply All';}
 }
 
 async function refreshParse() {
   try {
-    const res = await fetch(`${API_URL}/mutate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ owl_b64: owlB64, operations: [] }),
-    });
-    // No ops — just get back the b64 (same), but we need fresh parse
-    // Actually re-use /parse via blob trick
-    const blob = await (await fetch(`${API_URL}/download`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ owl_b64: owlB64 })
-    })).blob();
-    const file = new File([blob], 'refined.owl', { type: blob.type });
-    const fd = new FormData(); fd.append('file', file);
-    const r2 = await fetch(`${API_URL}/parse`, { method:'POST', body:fd });
-    if (r2.ok) {
-      const d2 = await r2.json();
-      owlB64   = d2.owl_b64;
-      ontology = d2;
-      renderWorkspace(d2, 'refined.owl');
-    }
-  } catch(_) {/* silent */}
+    const blob=await(await fetch(`${API_URL}/download`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({owl_b64:owlB64})})).blob();
+    const fd=new FormData(); fd.append('file',new File([blob],'refined.owl',{type:blob.type}));
+    const r=await fetch(`${API_URL}/parse`,{method:'POST',body:fd});
+    if(r.ok){const d=await r.json();owlB64=d.owl_b64;ontology=d;render(d,'refined.owl');}
+  } catch(_){}
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Download
-// ═══════════════════════════════════════════════════════════════════════════
 async function downloadCurrentOwl() {
-  if (!owlB64)  return alert('Load an OWL file first.');
-
+  if(!owlB64) return alert('Load an OWL file first.');
   try {
-    const res = await fetch(`${API_URL}/download`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ owl_b64: owlB64 }),
-    });
-    const blob = await res.blob();
-    const url  = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'ontology_refined.owl'; a.click();
-    URL.revokeObjectURL(url);
-  } catch(e) {
-    alert('Download failed: ' + e.message);
-  }
+    const blob=await(await fetch(`${API_URL}/download`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({owl_b64:owlB64})})).blob();
+    const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'ontology_refined.owl'});
+    a.click(); URL.revokeObjectURL(a.href);
+  } catch(e){alert('Download failed: '+e.message);}
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Consistency Check
-// ═══════════════════════════════════════════════════════════════════════════
 async function runConsistency() {
-  if (!owlB64)  return alert('Load an OWL file first.');
-
-  document.getElementById('consistency-spinner').classList.remove('hidden');
-  document.getElementById('consistency-result').innerHTML = '';
-
+  if(!owlB64) return alert('Load an OWL file first.');
+  s('consistency-spinner'); document.getElementById('consistency-result').innerHTML='';
   try {
-    const res = await fetch(`${API_URL}/check-consistency`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ owl_b64: owlB64 }),
-    });
-    const data = await res.json();
-
-    let html = '';
-    if (data.consistent === true) {
-      html = `<div class="notice ok"><span class="icon">✅</span><div>${esc(data.message)}</div></div>`;
-    } else if (data.consistent === false) {
-      let detail = '';
-      if (data.details && data.details.unsatisfiable_classes?.length)
-        detail += `<div>Unsatisfiable classes: ${data.details.unsatisfiable_classes.map(esc).join(', ')}</div>`;
-      if (data.details && data.details.inconsistent_individuals?.length)
-        detail += `<div>Inconsistent individuals: ${data.details.inconsistent_individuals.map(esc).join(', ')}</div>`;
-      html = `<div class="notice danger"><span class="icon">🚨</span><div><strong>${esc(data.message)}</strong>${detail}</div></div>`;
-    } else {
-      html = `<div class="notice warn"><span class="icon">⚠️</span><div>${esc(data.message)}</div></div>`;
-    }
-    document.getElementById('consistency-result').innerHTML = html;
-  } catch(e) {
-    document.getElementById('consistency-result').innerHTML =
-      `<div class="notice danger"><span class="icon">🚨</span>${esc(e.message)}</div>`;
-  } finally {
-    document.getElementById('consistency-spinner').classList.add('hidden');
-  }
+    const res=await fetch(`${API_URL}/check-consistency`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({owl_b64:owlB64})});
+    const d=await res.json();
+    let html='';
+    if(d.consistent===true)  html=`<div class="alert ok"><span class="ai">✓</span>${x(d.message)}</div>`;
+    else if(d.consistent===false) {
+      let det='';
+      if(d.details?.unsatisfiable_classes?.length)   det+=`<div>Unsatisfiable classes: ${d.details.unsatisfiable_classes.map(x).join(', ')}</div>`;
+      if(d.details?.inconsistent_individuals?.length) det+=`<div>Inconsistent individuals: ${d.details.inconsistent_individuals.map(x).join(', ')}</div>`;
+      html=`<div class="alert danger"><span class="ai">⚠</span><div><strong>${x(d.message)}</strong>${det}</div></div>`;
+    } else html=`<div class="alert warn"><span class="ai">⚠</span>${x(d.message)}</div>`;
+    document.getElementById('consistency-result').innerHTML=html;
+  } catch(e){document.getElementById('consistency-result').innerHTML=`<div class="alert danger"><span class="ai">⚠</span>${x(e.message)}</div>`;}
+  finally{h('consistency-spinner');}
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Tab switching
-// ═══════════════════════════════════════════════════════════════════════════
 function showTab(name) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById(`tab-${name}`).classList.add('active');
   document.querySelector(`.tab-btn[onclick="showTab('${name}')"]`).classList.add('active');
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Table filtering
-// ═══════════════════════════════════════════════════════════════════════════
-function filterTable(tableId, query) {
-  const q = query.toLowerCase();
-  const rows = document.querySelectorAll(`#${tableId} tbody tr`);
-  rows.forEach(r => {
-    r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
-  });
+function filterTable(id,q){
+  const ql=q.toLowerCase();
+  document.querySelectorAll(`#${id} tbody tr`).forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(ql)?'':'none';});
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Utilities
-// ═══════════════════════════════════════════════════════════════════════════
-function esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function v(id) { return document.getElementById(id).value.trim(); }
-function clear(id) { document.getElementById(id).value=''; document.getElementById(id).className=''; }
+function x(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function g(id){return document.getElementById(id).value.trim();}
+function c(id){const el=document.getElementById(id);el.value='';el.className='';}
+function s(id){document.getElementById(id).classList.remove('hidden');}
+function h(id){document.getElementById(id).classList.add('hidden');}
+function clrHint(id){const el=document.getElementById(id);if(el){el.textContent='';el.className='fh';}}
 </script>
 </body>
 </html>
